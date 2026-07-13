@@ -62,6 +62,10 @@ function Props() {
 
   const patch = (p: Partial<Clip>) => updateClip(clip.id, p)
   const isText = clip.kind === 'lyrics' || clip.kind === 'subtitle'
+  const isVideo = clip.kind === 'video'
+  const isImage = clip.kind === 'image'
+  const isAudio = clip.kind === 'audio'
+  const hasVisual = isVideo || isImage
 
   return (
     <div className="p-3 space-y-4">
@@ -95,14 +99,59 @@ function Props() {
         </>
       )}
 
+      {hasVisual && (
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="回転">
+            <select className="dds-select w-full" value={clip.rotate ?? 0} onChange={(e) => patch({ rotate: Number(e.target.value) })}>
+              <option value={0}>0°</option>
+              <option value={90}>90°</option>
+              <option value={180}>180°</option>
+              <option value={270}>270°</option>
+            </select>
+          </Field>
+          <Field label="ミラー / 反転">
+            <div className="flex gap-2 pt-0.5">
+              <MiniToggle on={!!clip.mirror} onClick={() => patch({ mirror: !clip.mirror })}>左右</MiniToggle>
+              {isVideo && <MiniToggle on={!!clip.reverse} onClick={() => patch({ reverse: !clip.reverse })}>逆再生</MiniToggle>}
+            </div>
+          </Field>
+        </div>
+      )}
+
+      {isVideo && (
+        <Field label={`速度 (${(clip.speed ?? 1).toFixed(2)}倍)`}>
+          <input type="range" min="0.25" max="4" step="0.05" className="w-full accent-dream-violet"
+            value={clip.speed ?? 1} onChange={(e) => patch({ speed: Number(e.target.value) })} />
+        </Field>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="フェードイン (秒)">
+          <input type="number" min="0" step="0.1" className="dds-input w-full" value={clip.fadeIn ?? 0} onChange={(e) => patch({ fadeIn: Math.max(0, Number(e.target.value)) })} />
+        </Field>
+        <Field label="フェードアウト (秒)">
+          <input type="number" min="0" step="0.1" className="dds-input w-full" value={clip.fadeOut ?? 0} onChange={(e) => patch({ fadeOut: Math.max(0, Number(e.target.value)) })} />
+        </Field>
+      </div>
+
       <Field label={`不透明度 (${clip.opacity ?? 100}%)`}>
         <input type="range" min="0" max="100" className="w-full accent-dream-violet" value={clip.opacity ?? 100} onChange={(e) => patch({ opacity: Number(e.target.value) })} />
       </Field>
 
-      {(clip.kind === 'audio' || clip.kind === 'video') && (
-        <Field label={`音量 (${clip.volume ?? 100}%)`}>
-          <input type="range" min="0" max="100" className="w-full accent-dream-violet" value={clip.volume ?? 100} onChange={(e) => patch({ volume: Number(e.target.value) })} />
-        </Field>
+      {(isAudio || isVideo) && (
+        <>
+          <Field label={`音量 (${clip.volume ?? 100}%)`}>
+            <input type="range" min="0" max="100" className="w-full accent-dream-violet" value={clip.volume ?? 100} onChange={(e) => patch({ volume: Number(e.target.value) })} />
+          </Field>
+          <div className="grid grid-cols-2 gap-2 items-end">
+            <Field label={`パン (${clip.pan ?? 0})`}>
+              <input type="range" min="-100" max="100" className="w-full accent-dream-violet" value={clip.pan ?? 0} onChange={(e) => patch({ pan: Number(e.target.value) })} />
+            </Field>
+            <div className="pb-1">
+              <MiniToggle on={!!clip.muted} onClick={() => patch({ muted: !clip.muted })}>ミュート</MiniToggle>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
@@ -182,6 +231,14 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 function Chip({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick} className="text-xs px-2.5 py-1 rounded-full border border-stage-700 bg-stage-850 hover:border-dream-violet hover:text-white text-stage-600 transition-colors">
+      {children}
+    </button>
+  )
+}
+function MiniToggle({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick}
+      className={'text-xs px-2 py-1 rounded-md border transition-colors ' + (on ? 'dream-gradient text-white border-transparent' : 'border-stage-700 text-stage-600 hover:text-white')}>
       {children}
     </button>
   )

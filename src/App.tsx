@@ -121,7 +121,7 @@ function Editor() {
           <div className="flex-1 min-h-0 bg-stage-950 flex items-center justify-center p-4">
             <Preview />
           </div>
-          <div className="h-[38%] min-h-[220px] border-t border-stage-800 bg-stage-900">
+          <div className="h-[44%] min-h-[280px] border-t border-stage-800 bg-stage-900">
             <Timeline />
           </div>
         </div>

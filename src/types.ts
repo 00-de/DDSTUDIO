@@ -41,6 +41,15 @@ export interface Clip {
   effectId?: string
   opacity?: number
   volume?: number
+  // 編集プロパティ
+  rotate?: number // 0/90/180/270
+  speed?: number // 再生速度 0.25〜4
+  mirror?: boolean // 左右反転
+  reverse?: boolean // 逆再生
+  fadeIn?: number // 秒
+  fadeOut?: number // 秒
+  muted?: boolean
+  pan?: number // -100(左)〜100(右)
 }
 
 export interface Track {
