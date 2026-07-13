@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: #0b0c11;
+  color: #e6e8ef;
+  font-feature-settings: 'palt';
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ドリーム・グラデーション（ロゴ／アクセント用） */
+.dream-gradient {
+  background-image: linear-gradient(120deg, #22d3ee 0%, #a855f7 50%, #ec4899 100%);
+}
+.dream-text {
+  background-image: linear-gradient(120deg, #22d3ee 0%, #a855f7 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3043;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4160;
+  background-clip: content-box;
+}
+
+/* パネル見出し */
+.panel-title {
+  @apply text-[11px] font-semibold tracking-wider text-stage-600 uppercase px-3 py-2 select-none;
+}
+
+/* ツールボタン */
+.tool-btn {
+  @apply flex items-center justify-center rounded-md text-stage-600 hover:text-white hover:bg-stage-750 transition-colors;
+}
+
+/* 入力欄 */
+.dds-input {
+  @apply bg-stage-950 border border-stage-700 rounded-md px-2 py-1 text-sm text-white outline-none focus:border-dream-violet transition-colors;
+}
+.dds-select {
+  @apply bg-stage-950 border border-stage-700 rounded-md px-2 py-1 text-sm text-white outline-none focus:border-dream-violet;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}

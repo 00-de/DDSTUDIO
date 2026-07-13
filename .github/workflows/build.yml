@@ -1,0 +1,46 @@
+name: Build Windows App
+
+# main へ push すると自動でビルドされ、.exe が生成されます。
+# 手動実行（Actions 画面の Run workflow）も可能です。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: リポジトリを取得
+        uses: actions/checkout@v4
+
+      - name: Node.js をセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 依存関係をインストール
+        run: npm ci
+
+      - name: ビルド（.exe 生成）
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: インストーラーをアップロード
+        uses: actions/upload-artifact@v4
+        with:
+          name: DayDreamStudio-Windows
+          path: release/*.exe
+          if-no-files-found: error
+
+      # タグ（v1.0.0 など）を push したときは Release も自動作成
+      - name: Release を作成（タグ push 時のみ）
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.exe
