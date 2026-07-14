@@ -4,6 +4,9 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import ffmpegStatic from 'ffmpeg-static'
+import updaterPkg from 'electron-updater'
+
+const { autoUpdater } = updaterPkg
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -59,11 +62,38 @@ function createWindow() {
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null) // 独自メニューバーを React 側に持たせる
   createWindow()
+  setupAutoUpdate()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+// 自動アップデート（インストール版のみ動作）
+function setupAutoUpdate() {
+  if (!app.isPackaged) return
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+
+  autoUpdater.on('update-downloaded', async (info) => {
+    if (!win) return
+    const res = await dialog.showMessageBox(win, {
+      type: 'info',
+      buttons: ['今すぐ再起動して更新', 'あとで'],
+      defaultId: 0,
+      cancelId: 1,
+      title: 'アップデート',
+      message: `新しいバージョン ${info.version} が利用可能です`,
+      detail: '再起動すると更新が適用されます。',
+    })
+    if (res.response === 0) autoUpdater.quitAndInstall()
+  })
+
+  autoUpdater.on('error', (err) => console.error('自動更新エラー:', err))
+
+  // 起動時に確認（数秒待ってウィンドウ表示後に）
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 3000)
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

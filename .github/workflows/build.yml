@@ -1,7 +1,7 @@
 name: Build Windows App
 
-# main へ push すると自動でビルドされ、.exe が生成されます。
-# 手動実行（Actions 画面の Run workflow）も可能です。
+# main へ push すると自動でビルドされ、GitHub の Releases に公開されます。
+# インストール済みのアプリは、この Release を見て自動アップデートします。
 on:
   push:
     branches: [main]
@@ -23,24 +23,18 @@ jobs:
         with:
           node-version: 20
 
+      - name: バージョンを自動採番（1.0.実行番号）
+        shell: bash
+        run: |
+          node -e "const fs=require('fs');const p=require('./package.json');p.version='1.0.'+process.env.GITHUB_RUN_NUMBER;fs.writeFileSync('package.json',JSON.stringify(p,null,2));console.log('version =',p.version)"
+
       - name: 依存関係をインストール
         run: npm ci
 
-      - name: ビルド（.exe 生成）
-        run: npm run dist
+      - name: レンダラー/メインをビルド
+        run: npm run build
+
+      - name: パッケージ化して Release に公開
+        run: npx electron-builder --win --x64 --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: インストーラーをアップロード
-        uses: actions/upload-artifact@v4
-        with:
-          name: DayDreamStudio-Windows
-          path: release/*.exe
-          if-no-files-found: error
-
-      # タグ（v1.0.0 など）を push したときは Release も自動作成
-      - name: Release を作成（タグ push 時のみ）
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release/*.exe

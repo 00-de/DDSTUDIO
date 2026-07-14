@@ -21,7 +21,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['ffmpeg-static'],
+              external: ['ffmpeg-static', 'electron-updater'],
             },
           },
         },
