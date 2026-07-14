@@ -54,6 +54,11 @@ export interface Clip {
   x?: number // -50〜50
   y?: number // -50〜50
   scale?: number // 拡大率 0.1〜4
+  // トランジション / カメラ演出
+  transition?: string // 'フェード' 等
+  direction?: 'both' | 'in' | 'out' | 'left' | 'right' | 'up' | 'down'
+  transColor?: string
+  camera?: string // 'ズーム' 等
 }
 
 export interface Track {
@@ -66,6 +71,7 @@ export interface Track {
   hidden: boolean
   solo?: boolean
   volume?: number // 0〜100
+  height?: number // トラックの高さ(px)
 }
 
 // ==== プロジェクト ====

@@ -83,6 +83,8 @@ interface StoreState {
   splitClip: (id: string, at: number) => void
   selectClip: (id?: string) => void
   updateTrack: (id: string, patch: Partial<Track>) => void
+  addTrack: (type: TrackType) => void
+  removeTrack: (id: string) => void
   addTelop: (text?: string) => void
   addTelopLines: (text: string, perLine?: number) => void
 
@@ -280,6 +282,38 @@ export const useStore = create<StoreState>((set, get) => ({
       const tr = project.tracks.find((t) => t.id === id)
       if (tr) Object.assign(tr, patch)
       return { project, dirty: true }
+    }),
+
+  addTrack: (type) =>
+    set((s) =>
+      withHistory(s, (p) => {
+        const base = TRACK_DEFS.find((d) => d.type === type)?.name ?? type
+        const same = p.tracks.filter((t) => t.type === type).length
+        p.tracks.push({
+          id: uid(),
+          type,
+          name: same > 0 ? `${base} ${same + 1}` : base,
+          clips: [],
+          locked: false,
+          muted: false,
+          hidden: false,
+          solo: false,
+          volume: 100,
+        })
+        return p
+      })
+    ),
+
+  removeTrack: (id) =>
+    set((s) => {
+      const project = JSON.parse(JSON.stringify(s.project)) as Project
+      project.tracks = project.tracks.filter((t) => t.id !== id)
+      return {
+        past: [...s.past.slice(-49), JSON.parse(JSON.stringify(s.project))],
+        future: [],
+        project,
+        dirty: true,
+      }
     }),
 
   addTelop: (text = 'テロップ') =>

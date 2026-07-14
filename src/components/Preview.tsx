@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import type { Clip } from '@/types'
 import EffectsCanvas from '@/components/EffectsCanvas'
+import TransitionOverlay, { cameraStyle } from '@/components/TransitionOverlay'
 
 // 背景ラベル → CSS
 function bgStyle(label?: string): React.CSSProperties {
@@ -55,6 +56,9 @@ export default function Preview() {
   const asset = visual?.assetId ? project.assets.find((a) => a.id === visual.assetId) : undefined
   const texts = activeClips(project.tracks, t, ['lyrics', 'subtitle'])
   const bg = activeClips(project.tracks, t, ['background'])[0]
+  const transitions = activeClips(project.tracks, t, ['effect']).filter((c) => c.transition)
+  const cameras = activeClips(project.tracks, t, ['camera'])
+  const cameraClip = cameras[cameras.length - 1]
 
   useEffect(() => {
     const v = videoRef.current
@@ -92,18 +96,37 @@ export default function Preview() {
         className="relative bg-black rounded-lg overflow-hidden shadow-2xl ring-1 ring-stage-800"
         style={{ aspectRatio: '16 / 9', maxHeight: '100%', maxWidth: '100%', height: '100%' }}
       >
-        {/* 背景 */}
-        <div className="absolute inset-0" style={bg ? bgStyle(bg.label) : bgStyle(undefined)} />
+        {/* カメラ演出の対象（背景＋映像） */}
+        <div className="absolute inset-0" style={{ ...cameraStyle(cameraClip, t), transformOrigin: '50% 50%' }}>
+          {/* 背景 */}
+          <div className="absolute inset-0" style={bg ? bgStyle(bg.label) : bgStyle(undefined)} />
 
-        {/* メインビジュアル（移動・拡大可） */}
-        {asset && visual && (
-          <Movable clip={visual} t={t} getRect={getRect} selected={visual.id === selectedClipId} fill onSelect={() => selectClip(visual.id)}>
-            {asset.kind === 'video' ? (
-              <video ref={videoRef} src={asset.url} className="w-full h-full object-contain pointer-events-none" />
-            ) : (
-              <img src={asset.url} className="w-full h-full object-contain pointer-events-none" />
-            )}
-          </Movable>
+          {/* メインビジュアル（移動・拡大可） */}
+          {asset && visual && (
+            <Movable clip={visual} t={t} getRect={getRect} selected={visual.id === selectedClipId} fill onSelect={() => selectClip(visual.id)}>
+              {asset.kind === 'video' ? (
+                <video ref={videoRef} src={asset.url} className="w-full h-full object-contain pointer-events-none" />
+              ) : (
+                <img src={asset.url} className="w-full h-full object-contain pointer-events-none" />
+              )}
+            </Movable>
+          )}
+          {!asset && !bg && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-14 h-14 mx-auto rounded-xl dream-gradient opacity-80 mb-3" />
+                <div className="text-white/40 text-sm">プレビュー</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 映画風レターボックス */}
+        {cameraClip?.camera === '映画風' && (
+          <>
+            <div className="absolute top-0 inset-x-0 h-[12%] bg-black pointer-events-none" />
+            <div className="absolute bottom-0 inset-x-0 h-[12%] bg-black pointer-events-none" />
+          </>
         )}
 
         {/* エフェクト */}
@@ -115,6 +138,9 @@ export default function Preview() {
             <TelopText clip={c} />
           </Movable>
         ))}
+
+        {/* トランジション（最前面） */}
+        <TransitionOverlay clips={transitions} t={t} />
 
         {/* セーフエリア枠 */}
         <div className="absolute inset-[5%] border border-white/10 rounded pointer-events-none" />

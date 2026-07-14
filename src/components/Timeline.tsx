@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { useStore } from '@/store/useStore'
-import { TRACK_COLORS } from '@/lib/catalog'
-import type { Clip } from '@/types'
+import { TRACK_COLORS, TRACK_DEFS } from '@/lib/catalog'
+import type { Clip, TrackType } from '@/types'
 
-const HEADER_W = 150
+const HEADER_W = 164
 const LANE_H = 46
 const RULER_H = 24
 
@@ -12,12 +12,28 @@ export default function Timeline() {
   const zoom = useStore((s) => s.zoom)
   const currentTime = useStore((s) => s.currentTime)
   const selectedClipId = useStore((s) => s.selectedClipId)
-  const { setCurrentTime, selectClip, moveClip, setZoom, updateTrack } = useStore()
+  const { setCurrentTime, selectClip, moveClip, setZoom, updateTrack, addTrack, removeTrack } = useStore()
   const scrollRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ id: string; grabDx: number } | null>(null)
+  const resizeRef = useRef<{ id: string; startY: number; startH: number } | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
   const [, force] = useState(0)
 
   const totalWidth = Math.max(project.durationSec * zoom, 400)
+
+  // トラック高さリサイズ
+  const onResizeDown = (e: React.PointerEvent, id: string, h: number) => {
+    e.stopPropagation()
+    resizeRef.current = { id, startY: e.clientY, startH: h }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const onResizeMove = (e: React.PointerEvent) => {
+    if (!resizeRef.current) return
+    const dy = e.clientY - resizeRef.current.startY
+    updateTrack(resizeRef.current.id, { height: Math.min(200, Math.max(32, resizeRef.current.startH + dy)) })
+    force((n) => n + 1)
+  }
+  const onResizeUp = () => { resizeRef.current = null }
 
   // clientX → 時間（秒）。ヘッダ幅とスクロール量を考慮
   const timeFromClientX = (clientX: number) => {
@@ -66,8 +82,32 @@ export default function Timeline() {
   return (
     <div className="h-full flex flex-col select-none">
       {/* タイトルバー */}
-      <div className="h-8 flex items-center justify-between px-3 border-b border-stage-800 bg-stage-850 shrink-0">
-        <span className="panel-title !p-0">タイムライン</span>
+      <div className="h-8 flex items-center justify-between px-3 border-b border-stage-800 bg-stage-850 shrink-0 relative">
+        <div className="flex items-center gap-2">
+          <span className="panel-title !p-0">タイムライン</span>
+          <div className="relative">
+            <button
+              onClick={() => setAddOpen((v) => !v)}
+              className="text-[11px] px-2 py-0.5 rounded-md dream-gradient text-white font-semibold hover:brightness-110"
+            >
+              ＋ トラック追加
+            </button>
+            {addOpen && (
+              <div className="absolute top-7 left-0 z-50 bg-white border border-stage-700 rounded-md shadow-xl py-1 w-32" onMouseLeave={() => setAddOpen(false)}>
+                {TRACK_DEFS.map((d) => (
+                  <button
+                    key={d.type}
+                    onClick={() => { addTrack(d.type as TrackType); setAddOpen(false) }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-dream-violet/10 text-left text-sm"
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ background: TRACK_COLORS[d.type] }} />
+                    {d.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
         <div className="flex items-center gap-2 text-xs text-stage-600">
           <span className="tabular-nums">{project.durationSec}s / {zoom.toFixed(0)}px/s</span>
           <button className="tool-btn w-6 h-6 rounded" title="縮小" onClick={() => setZoom(zoom - 4)}>−</button>
@@ -92,10 +132,12 @@ export default function Timeline() {
           </div>
 
           {/* トラック行 */}
-          {project.tracks.map((tr, idx) => (
-            <div key={tr.id} className="flex" style={{ height: LANE_H }}>
+          {project.tracks.map((tr, idx) => {
+            const h = tr.height ?? LANE_H
+            return (
+            <div key={tr.id} className="flex" style={{ height: h }}>
               {/* 見出し（左固定・VEGAS 風） */}
-              <div className="sticky left-0 z-20 bg-stage-900 border-b border-r border-stage-800/60 flex shrink-0" style={{ width: HEADER_W }}>
+              <div className="sticky left-0 z-20 bg-stage-900 border-b border-r border-stage-800/60 flex shrink-0 relative group" style={{ width: HEADER_W }}>
                 <div className="w-1 shrink-0" style={{ background: TRACK_COLORS[tr.type] }} />
                 <div className="flex-1 min-w-0 flex flex-col justify-center px-1.5 gap-1">
                   <div className="flex items-center gap-1">
@@ -104,6 +146,11 @@ export default function Timeline() {
                     <HdrBtn on={tr.muted} label="M" title="ミュート" onClick={() => updateTrack(tr.id, { muted: !tr.muted })} />
                     <HdrBtn on={!!tr.solo} label="S" title="ソロ" onClick={() => updateTrack(tr.id, { solo: !tr.solo })} accent />
                     <HdrBtn on={tr.hidden} label="👁" title="表示/非表示" onClick={() => updateTrack(tr.id, { hidden: !tr.hidden })} />
+                    <button
+                      title="トラック削除"
+                      onClick={() => { if (confirm(`「${tr.name}」トラックを削除しますか？`)) removeTrack(tr.id) }}
+                      className="w-4 h-4 rounded-sm text-[10px] text-stage-600 hover:text-white hover:bg-red-500 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    >×</button>
                   </div>
                   <input
                     type="range" min="0" max="100" value={tr.volume ?? 100}
@@ -112,6 +159,14 @@ export default function Timeline() {
                     title="音量"
                   />
                 </div>
+                {/* 高さリサイズハンドル */}
+                <div
+                  onPointerDown={(e) => onResizeDown(e, tr.id, h)}
+                  onPointerMove={onResizeMove}
+                  onPointerUp={onResizeUp}
+                  className="absolute left-0 right-0 bottom-0 h-1.5 cursor-ns-resize hover:bg-dream-violet/40"
+                  title="ドラッグで高さ変更"
+                />
               </div>
               {/* レーン */}
               <div className="relative border-b border-stage-800/60" style={{ width: totalWidth }}
@@ -130,7 +185,8 @@ export default function Timeline() {
                 })}
               </div>
             </div>
-          ))}
+            )
+          })}
 
           {/* 再生ヘッド */}
           <div className="absolute top-0 bottom-0 w-px bg-dream-pink z-10 pointer-events-none" style={{ left: HEADER_W + currentTime * zoom }}>

@@ -83,6 +83,44 @@ function Props() {
         </Field>
       </div>
 
+      {clip.transition && (
+        <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
+          <div className="text-[11px] text-dream-violet font-semibold tracking-wider">トランジション詳細</div>
+          <Field label="種類">
+            <select className="dds-select w-full" value={clip.transition} onChange={(e) => patch({ transition: e.target.value, label: e.target.value })}>
+              {TRANSITIONS.map((tr) => <option key={tr} value={tr}>{tr}</option>)}
+            </select>
+          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="方向">
+              <select className="dds-select w-full" value={clip.direction ?? 'both'} onChange={(e) => patch({ direction: e.target.value as never })}>
+                <option value="both">標準</option>
+                <option value="in">イン</option>
+                <option value="out">アウト</option>
+                <option value="left">左</option>
+                <option value="right">右</option>
+                <option value="up">上</option>
+                <option value="down">下</option>
+              </select>
+            </Field>
+            <Field label="色">
+              <input type="color" className="w-full h-8 rounded bg-white border border-stage-700" value={clip.transColor ?? '#000000'} onChange={(e) => patch({ transColor: e.target.value })} />
+            </Field>
+          </div>
+        </div>
+      )}
+
+      {clip.camera && (
+        <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
+          <div className="text-[11px] text-dream-violet font-semibold tracking-wider">カメラ演出</div>
+          <Field label="種類">
+            <select className="dds-select w-full" value={clip.camera} onChange={(e) => patch({ camera: e.target.value, label: e.target.value })}>
+              {CAMERA_MOVES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+        </div>
+      )}
+
       {isText && (
         <>
           <Field label="テキスト">
@@ -203,12 +241,12 @@ function Stage() {
       </Group>
       <Group title="トランジション">
         {TRANSITIONS.map((tr) => (
-          <Chip key={tr} onClick={() => addSpecialClip({ kind: 'effect', label: tr, duration: 1, color: '#94A3B8' })}>{tr}</Chip>
+          <Chip key={tr} onClick={() => addSpecialClip({ kind: 'effect', label: tr, transition: tr, direction: 'both', transColor: '#000000', duration: 1, color: '#94A3B8' })}>{tr}</Chip>
         ))}
       </Group>
       <Group title="カメラ演出">
         {CAMERA_MOVES.map((c) => (
-          <Chip key={c} onClick={() => addSpecialClip({ kind: 'camera', label: c, duration: 4, color: '#F97316' })}>{c}</Chip>
+          <Chip key={c} onClick={() => addSpecialClip({ kind: 'camera', label: c, camera: c, duration: 4, color: '#F97316' })}>{c}</Chip>
         ))}
       </Group>
     </div>
