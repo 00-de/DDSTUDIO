@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useStore } from '@/store/useStore'
 import { saveProject, openProject } from '@/lib/actions'
@@ -59,8 +59,26 @@ export default function App() {
 function Editor() {
   const { playing, setCurrentTime, setPlaying, currentTime } = useStore()
   const durationSec = useStore((s) => s.project.durationSec)
+  const fps = useStore((s) => s.project.fps)
   const rafRef = useRef<number>()
   const lastRef = useRef<number>()
+
+  // プレビュー↔タイムラインの分割
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [timelineH, setTimelineH] = useState(300)
+  const splitDrag = useRef(false)
+
+  const onSplitDown = (e: React.PointerEvent) => {
+    splitDrag.current = true
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const onSplitMove = (e: React.PointerEvent) => {
+    if (!splitDrag.current || !containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const h = rect.bottom - e.clientY
+    setTimelineH(Math.min(rect.height - 220, Math.max(140, h)))
+  }
+  const onSplitUp = () => { splitDrag.current = false }
 
   // 再生ループ
   useEffect(() => {
@@ -95,27 +113,49 @@ function Editor() {
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       const s = useStore.getState()
       const ctrl = e.ctrlKey || e.metaKey
+      const frame = 1 / fps
+      const dur = s.project.durationSec
+      const t = s.currentTime
+      const k = e.key.toLowerCase()
 
-      if (ctrl && e.key.toLowerCase() === 'n') { e.preventDefault(); s.createProject() }
-      else if (ctrl && e.key.toLowerCase() === 'o') { e.preventDefault(); openProject() }
-      else if (ctrl && e.shiftKey && e.key.toLowerCase() === 's') { e.preventDefault(); saveProject(true) }
-      else if (ctrl && e.key.toLowerCase() === 's') { e.preventDefault(); saveProject(false) }
-      else if (ctrl && e.key.toLowerCase() === 'z') { e.preventDefault(); s.undo() }
-      else if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); s.redo() }
-      else if (ctrl && e.key.toLowerCase() === 'e') { e.preventDefault(); s.openModal('export') }
-      else if (e.key === 'Delete') { if (s.selectedClipId) { e.preventDefault(); s.removeClip(s.selectedClipId) } }
+      if (ctrl && k === 'n') { e.preventDefault(); s.createProject() }
+      else if (ctrl && k === 'o') { e.preventDefault(); openProject() }
+      else if (ctrl && e.shiftKey && k === 's') { e.preventDefault(); saveProject(true) }
+      else if (ctrl && k === 's') { e.preventDefault(); saveProject(false) }
+      else if (ctrl && k === 'z') { e.preventDefault(); s.undo() }
+      else if (ctrl && k === 'y') { e.preventDefault(); s.redo() }
+      else if (ctrl && k === 'e') { e.preventDefault(); s.openModal('export') }
+      else if (ctrl && k === 'd') { e.preventDefault(); s.selectedClipId && s.duplicateClip(s.selectedClipId) }
+      else if (k === 'delete' || k === 'backspace') { if (s.selectedClipId) { e.preventDefault(); s.removeClip(s.selectedClipId) } }
       else if (e.code === 'Space') { e.preventDefault(); s.togglePlay() }
-      else if (e.key === 'F11') { e.preventDefault(); toggleFullscreen() }
+      else if (k === 'f11') { e.preventDefault(); toggleFullscreen() }
+      // 再生ヘッド移動 / クリップ微調整
+      else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        if (e.altKey && s.selectedClipId) nudgeClip(s.selectedClipId, e.shiftKey ? 1 : 0.1)
+        else s.setCurrentTime(Math.min(dur, t + (e.shiftKey ? 1 : frame)))
+      }
+      else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        if (e.altKey && s.selectedClipId) nudgeClip(s.selectedClipId, e.shiftKey ? -1 : -0.1)
+        else s.setCurrentTime(Math.max(0, t - (e.shiftKey ? 1 : frame)))
+      }
+      else if (e.key === 'Home') { e.preventDefault(); s.setCurrentTime(0) }
+      else if (e.key === 'End') { e.preventDefault(); s.setCurrentTime(dur) }
+      else if (k === 's' && !ctrl) { /* 分割 */ if (s.selectedClipId) { e.preventDefault(); s.splitClip(s.selectedClipId, t) } }
+      else if (e.key === '+' || e.key === '=') { e.preventDefault(); s.setZoom(s.zoom + 4) }
+      else if (e.key === '-') { e.preventDefault(); s.setZoom(s.zoom - 4) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [fps])
 
   return (
     <>
       <MenuBar />
       <ToolBar />
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div ref={containerRef} className="flex-1 min-h-0 flex flex-col"
+        onPointerMove={onSplitMove} onPointerUp={onSplitUp}>
         {/* 上段：素材 / プレビュー＋トランスポート / プロパティ / マスター */}
         <div className="flex-1 min-h-0 flex">
           <div className="w-64 shrink-0 border-r border-stage-800 bg-stage-900 flex flex-col">
@@ -132,14 +172,32 @@ function Editor() {
           </div>
           <MasterMeter />
         </div>
-        {/* 下段：タイムライン（全幅） */}
-        <div className="h-[42%] min-h-[260px] border-t border-stage-800 bg-stage-900">
+
+        {/* 分割バー（ドラッグで上下の比率を変更） */}
+        <div
+          onPointerDown={onSplitDown}
+          className="h-2 shrink-0 cursor-row-resize bg-stage-800 hover:bg-dream-violet/50 transition-colors flex items-center justify-center group"
+          title="ドラッグでプレビューとタイムラインの高さを調整"
+        >
+          <div className="w-10 h-1 rounded-full bg-stage-600 group-hover:bg-white" />
+        </div>
+
+        {/* 下段：タイムライン（全幅・高さ可変） */}
+        <div style={{ height: timelineH }} className="shrink-0 border-t border-stage-800 bg-stage-900">
           <Timeline />
         </div>
       </div>
       <StatusBar />
     </>
   )
+}
+
+function nudgeClip(id: string, delta: number) {
+  const s = useStore.getState()
+  for (const tr of s.project.tracks) {
+    const c = tr.clips.find((c) => c.id === id)
+    if (c) { s.moveClip(id, Math.max(0, c.start + delta)); return }
+  }
 }
 
 async function toggleFullscreen() {

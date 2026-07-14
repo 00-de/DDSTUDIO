@@ -85,6 +85,7 @@ interface StoreState {
   updateTrack: (id: string, patch: Partial<Track>) => void
   addTrack: (type: TrackType) => void
   removeTrack: (id: string) => void
+  moveTrack: (id: string, dir: 'up' | 'down') => void
   addTelop: (text?: string) => void
   addTelopLines: (text: string, perLine?: number) => void
 
@@ -314,6 +315,17 @@ export const useStore = create<StoreState>((set, get) => ({
         project,
         dirty: true,
       }
+    }),
+
+  moveTrack: (id, dir) =>
+    set((s) => {
+      const project = JSON.parse(JSON.stringify(s.project)) as Project
+      const i = project.tracks.findIndex((t) => t.id === id)
+      const j = dir === 'up' ? i - 1 : i + 1
+      if (i < 0 || j < 0 || j >= project.tracks.length) return {}
+      const arr = project.tracks
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      return { project, dirty: true }
     }),
 
   addTelop: (text = 'テロップ') =>

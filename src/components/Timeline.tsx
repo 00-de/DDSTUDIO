@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { TRACK_COLORS, TRACK_DEFS } from '@/lib/catalog'
-import type { Clip, TrackType } from '@/types'
+import type { Clip, Track, TrackType } from '@/types'
 
 const HEADER_W = 164
 const LANE_H = 46
@@ -12,7 +12,7 @@ export default function Timeline() {
   const zoom = useStore((s) => s.zoom)
   const currentTime = useStore((s) => s.currentTime)
   const selectedClipId = useStore((s) => s.selectedClipId)
-  const { setCurrentTime, selectClip, moveClip, setZoom, updateTrack, addTrack, removeTrack } = useStore()
+  const { setCurrentTime, selectClip, moveClip, setZoom, updateTrack, addTrack, removeTrack, moveTrack } = useStore()
   const scrollRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ id: string; grabDx: number } | null>(null)
   const resizeRef = useRef<{ id: string; startY: number; startH: number } | null>(null)
@@ -139,10 +139,17 @@ export default function Timeline() {
               {/* 見出し（左固定・VEGAS 風） */}
               <div className="sticky left-0 z-20 bg-stage-900 border-b border-r border-stage-800/60 flex shrink-0 relative group" style={{ width: HEADER_W }}>
                 <div className="w-1 shrink-0" style={{ background: TRACK_COLORS[tr.type] }} />
-                <div className="flex-1 min-w-0 flex flex-col justify-center px-1.5 gap-1">
+                {/* 並び替え + 番号 */}
+                <div className="flex flex-col items-center justify-center px-0.5 shrink-0">
+                  <button title="上へ" onClick={() => moveTrack(tr.id, 'up')} disabled={idx === 0}
+                    className="text-[8px] leading-none text-stage-600 hover:text-dream-violet disabled:opacity-20">▲</button>
+                  <span className="text-[10px] font-bold text-slate-500 leading-tight">{idx + 1}</span>
+                  <button title="下へ" onClick={() => moveTrack(tr.id, 'down')} disabled={idx === project.tracks.length - 1}
+                    className="text-[8px] leading-none text-stage-600 hover:text-dream-violet disabled:opacity-20">▼</button>
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col justify-center px-1 gap-1">
                   <div className="flex items-center gap-1">
-                    <span className="text-[9px] text-stage-600 w-3 text-center shrink-0">{idx + 1}</span>
-                    <span className="text-[11px] text-slate-700 truncate flex-1">{tr.name}</span>
+                    <TrackName track={tr} onRename={(name) => updateTrack(tr.id, { name })} />
                     <HdrBtn on={tr.muted} label="M" title="ミュート" onClick={() => updateTrack(tr.id, { muted: !tr.muted })} />
                     <HdrBtn on={!!tr.solo} label="S" title="ソロ" onClick={() => updateTrack(tr.id, { solo: !tr.solo })} accent />
                     <HdrBtn on={tr.hidden} label="👁" title="表示/非表示" onClick={() => updateTrack(tr.id, { hidden: !tr.hidden })} />
@@ -195,6 +202,32 @@ export default function Timeline() {
         </div>
       </div>
     </div>
+  )
+}
+
+function TrackName({ track, onRename }: { track: Track; onRename: (name: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [val, setVal] = useState(track.name)
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={() => { onRename(val.trim() || track.name); setEditing(false) }}
+        onKeyDown={(e) => { if (e.key === 'Enter') { onRename(val.trim() || track.name); setEditing(false) } }}
+        className="flex-1 min-w-0 text-[11px] bg-white border border-dream-violet rounded px-1 outline-none text-slate-800"
+      />
+    )
+  }
+  return (
+    <span
+      className="text-[11px] text-slate-700 truncate flex-1 cursor-text"
+      title="ダブルクリックで名前を変更"
+      onDoubleClick={() => { setVal(track.name); setEditing(true) }}
+    >
+      {track.name}
+    </span>
   )
 }
 
