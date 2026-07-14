@@ -125,6 +125,20 @@ function Props() {
         </Field>
       )}
 
+      {(hasVisual || isText) && (
+        <div className="grid grid-cols-3 gap-2">
+          <Field label="X位置">
+            <input type="number" step="1" className="dds-input w-full" value={Math.round(clip.x ?? 0)} onChange={(e) => patch({ x: Number(e.target.value) })} />
+          </Field>
+          <Field label="Y位置">
+            <input type="number" step="1" className="dds-input w-full" value={Math.round(clip.y ?? 0)} onChange={(e) => patch({ y: Number(e.target.value) })} />
+          </Field>
+          <Field label="拡大率">
+            <input type="number" step="0.05" min="0.1" max="4" className="dds-input w-full" value={round(clip.scale ?? 1)} onChange={(e) => patch({ scale: Math.max(0.1, Number(e.target.value)) })} />
+          </Field>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-2">
         <Field label="フェードイン (秒)">
           <input type="number" min="0" step="0.1" className="dds-input w-full" value={clip.fadeIn ?? 0} onChange={(e) => patch({ fadeIn: Math.max(0, Number(e.target.value)) })} />

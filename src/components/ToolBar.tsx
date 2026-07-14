@@ -126,6 +126,17 @@ export default function ToolBar() {
       <div className="ml-auto" />
 
       <button
+        onClick={() => s.openModal('telop')}
+        className="h-8 px-3 rounded-md border border-stage-700 text-stage-600 hover:text-white hover:border-dream-violet text-sm font-medium flex items-center gap-1.5 mr-1"
+        title="テロップ・歌詞を追加"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M4 7V5h16v2M9 5v14M7 19h4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        テロップ
+      </button>
+
+      <button
         onClick={() => s.openModal('export')}
         className="h-8 px-4 rounded-md dream-gradient text-white text-sm font-semibold hover:brightness-110 shadow-glow flex items-center gap-1.5"
       >

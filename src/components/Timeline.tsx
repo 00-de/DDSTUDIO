@@ -3,8 +3,8 @@ import { useStore } from '@/store/useStore'
 import { TRACK_COLORS } from '@/lib/catalog'
 import type { Clip } from '@/types'
 
-const HEADER_W = 96
-const LANE_H = 40
+const HEADER_W = 150
+const LANE_H = 46
 const RULER_H = 24
 
 export default function Timeline() {
@@ -12,7 +12,7 @@ export default function Timeline() {
   const zoom = useStore((s) => s.zoom)
   const currentTime = useStore((s) => s.currentTime)
   const selectedClipId = useStore((s) => s.selectedClipId)
-  const { setCurrentTime, selectClip, moveClip, setZoom } = useStore()
+  const { setCurrentTime, selectClip, moveClip, setZoom, updateTrack } = useStore()
   const scrollRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ id: string; grabDx: number } | null>(null)
   const [, force] = useState(0)
@@ -85,19 +85,33 @@ export default function Timeline() {
               {ticks.map((s) => (
                 <div key={s} className="absolute top-0 h-full flex items-start" style={{ left: s * zoom }}>
                   <div className="w-px h-2 bg-stage-700" />
-                  <span className="text-[9px] text-stage-600 ml-1 mt-0.5 tabular-nums">{s}s</span>
+                  <span className="text-[9px] text-stage-600 ml-1 mt-0.5 tabular-nums">{tickLabel(s)}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* トラック行 */}
-          {project.tracks.map((tr) => (
+          {project.tracks.map((tr, idx) => (
             <div key={tr.id} className="flex" style={{ height: LANE_H }}>
-              {/* 見出し（左固定） */}
-              <div className="sticky left-0 z-20 bg-stage-900 border-b border-r border-stage-800/60 flex items-center gap-1.5 px-2 shrink-0" style={{ width: HEADER_W }}>
-                <div className="w-1.5 h-6 rounded-full shrink-0" style={{ background: TRACK_COLORS[tr.type] }} />
-                <span className="text-[11px] text-stage-600 truncate">{tr.name}</span>
+              {/* 見出し（左固定・VEGAS 風） */}
+              <div className="sticky left-0 z-20 bg-stage-900 border-b border-r border-stage-800/60 flex shrink-0" style={{ width: HEADER_W }}>
+                <div className="w-1 shrink-0" style={{ background: TRACK_COLORS[tr.type] }} />
+                <div className="flex-1 min-w-0 flex flex-col justify-center px-1.5 gap-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] text-stage-600 w-3 text-center shrink-0">{idx + 1}</span>
+                    <span className="text-[11px] text-white/80 truncate flex-1">{tr.name}</span>
+                    <HdrBtn on={tr.muted} label="M" title="ミュート" onClick={() => updateTrack(tr.id, { muted: !tr.muted })} />
+                    <HdrBtn on={!!tr.solo} label="S" title="ソロ" onClick={() => updateTrack(tr.id, { solo: !tr.solo })} accent />
+                    <HdrBtn on={tr.hidden} label="👁" title="表示/非表示" onClick={() => updateTrack(tr.id, { hidden: !tr.hidden })} />
+                  </div>
+                  <input
+                    type="range" min="0" max="100" value={tr.volume ?? 100}
+                    onChange={(e) => updateTrack(tr.id, { volume: Number(e.target.value) })}
+                    className="w-full h-1 accent-dream-violet"
+                    title="音量"
+                  />
+                </div>
               </div>
               {/* レーン */}
               <div className="relative border-b border-stage-800/60" style={{ width: totalWidth }}
@@ -125,5 +139,29 @@ export default function Timeline() {
         </div>
       </div>
     </div>
+  )
+}
+
+function tickLabel(s: number): string {
+  if (s < 60) return `${s}s`
+  const m = Math.floor(s / 60)
+  const ss = s % 60
+  return `${m}:${String(ss).padStart(2, '0')}`
+}
+
+function HdrBtn({ on, label, title, onClick, accent }: { on: boolean; label: string; title: string; onClick: () => void; accent?: boolean }) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      className={
+        'w-4 h-4 rounded-sm text-[8px] font-bold flex items-center justify-center shrink-0 transition-colors ' +
+        (on
+          ? (accent ? 'bg-dream-cyan text-black' : 'bg-dream-pink text-white')
+          : 'bg-stage-800 text-stage-600 hover:text-white')
+      }
+    >
+      {label}
+    </button>
   )
 }

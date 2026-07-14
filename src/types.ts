@@ -50,6 +50,10 @@ export interface Clip {
   fadeOut?: number // 秒
   muted?: boolean
   pan?: number // -100(左)〜100(右)
+  // プレビュー上の配置（中心からの%オフセットと拡大率）
+  x?: number // -50〜50
+  y?: number // -50〜50
+  scale?: number // 拡大率 0.1〜4
 }
 
 export interface Track {
@@ -60,6 +64,8 @@ export interface Track {
   locked: boolean
   muted: boolean
   hidden: boolean
+  solo?: boolean
+  volume?: number // 0〜100
 }
 
 // ==== プロジェクト ====

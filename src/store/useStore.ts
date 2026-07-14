@@ -63,7 +63,7 @@ interface StoreState {
   recent: RecentItem[]
   settings: Settings
   // モーダル
-  modal: null | 'settings' | 'export'
+  modal: null | 'settings' | 'export' | 'telop'
 
   // ---- 操作 ----
   goHome: () => void
@@ -82,6 +82,9 @@ interface StoreState {
   duplicateClip: (id: string) => void
   splitClip: (id: string, at: number) => void
   selectClip: (id?: string) => void
+  updateTrack: (id: string, patch: Partial<Track>) => void
+  addTelop: (text?: string) => void
+  addTelopLines: (text: string, perLine?: number) => void
 
   setCurrentTime: (t: number) => void
   togglePlay: () => void
@@ -270,6 +273,68 @@ export const useStore = create<StoreState>((set, get) => ({
     ),
 
   selectClip: (id) => set({ selectedClipId: id }),
+
+  updateTrack: (id, patch) =>
+    set((s) => {
+      const project = JSON.parse(JSON.stringify(s.project)) as Project
+      const tr = project.tracks.find((t) => t.id === id)
+      if (tr) Object.assign(tr, patch)
+      return { project, dirty: true }
+    }),
+
+  addTelop: (text = 'テロップ') =>
+    set((s) =>
+      withHistory(s, (p) => {
+        const track = p.tracks.find((t) => t.type === 'subtitle') || p.tracks[0]
+        const clip: Clip = {
+          id: uid(),
+          trackId: track.id,
+          kind: 'subtitle',
+          label: text,
+          text,
+          start: s.currentTime,
+          duration: 4,
+          color: TRACK_COLORS.subtitle,
+          fontColor: '#ffffff',
+          fontSize: 48,
+          opacity: 100,
+          x: 0,
+          y: 0,
+          scale: 1,
+        }
+        track.clips.push(clip)
+        return fit(p)
+      })
+    ),
+
+  addTelopLines: (text, perLine = 3) =>
+    set((s) =>
+      withHistory(s, (p) => {
+        const track = p.tracks.find((t) => t.type === 'lyrics') || p.tracks[0]
+        const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+        let start = s.currentTime
+        for (const line of lines) {
+          track.clips.push({
+            id: uid(),
+            trackId: track.id,
+            kind: 'lyrics',
+            label: line,
+            text: line,
+            start,
+            duration: perLine,
+            color: TRACK_COLORS.lyrics,
+            fontColor: '#ffffff',
+            fontSize: 48,
+            opacity: 100,
+            x: 0,
+            y: 0,
+            scale: 1,
+          })
+          start += perLine
+        }
+        return fit(p)
+      })
+    ),
 
   setCurrentTime: (t) => set({ currentTime: Math.max(0, t) }),
   togglePlay: () => set((s) => ({ playing: !s.playing })),

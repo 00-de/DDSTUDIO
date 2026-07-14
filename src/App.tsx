@@ -7,11 +7,14 @@ import MenuBar from '@/components/MenuBar'
 import ToolBar from '@/components/ToolBar'
 import MaterialPanel from '@/components/MaterialPanel'
 import Preview from '@/components/Preview'
+import PreviewTransport from '@/components/PreviewTransport'
+import MasterMeter from '@/components/MasterMeter'
 import Timeline from '@/components/Timeline'
 import PropertiesPanel from '@/components/PropertiesPanel'
 import StatusBar from '@/components/StatusBar'
 import SettingsModal from '@/components/SettingsModal'
 import ExportModal from '@/components/ExportModal'
+import TelopModal from '@/components/TelopModal'
 
 export default function App() {
   const screen = useStore((s) => s.screen)
@@ -47,6 +50,7 @@ export default function App() {
       <AnimatePresence>
         {modal === 'settings' && <SettingsModal key="settings" />}
         {modal === 'export' && <ExportModal key="export" />}
+        {modal === 'telop' && <TelopModal key="telop" />}
       </AnimatePresence>
     </div>
   )
@@ -111,23 +115,26 @@ function Editor() {
     <>
       <MenuBar />
       <ToolBar />
-      <div className="flex-1 min-h-0 flex">
-        {/* 左：素材 */}
-        <div className="w-64 shrink-0 border-r border-stage-800 bg-stage-900 flex flex-col">
-          <MaterialPanel />
-        </div>
-        {/* 中央：プレビュー + タイムライン */}
-        <div className="flex-1 min-w-0 flex flex-col">
-          <div className="flex-1 min-h-0 bg-stage-950 flex items-center justify-center p-4">
-            <Preview />
+      <div className="flex-1 min-h-0 flex flex-col">
+        {/* 上段：素材 / プレビュー＋トランスポート / プロパティ / マスター */}
+        <div className="flex-1 min-h-0 flex">
+          <div className="w-64 shrink-0 border-r border-stage-800 bg-stage-900 flex flex-col">
+            <MaterialPanel />
           </div>
-          <div className="h-[44%] min-h-[280px] border-t border-stage-800 bg-stage-900">
-            <Timeline />
+          <div className="flex-1 min-w-0 flex flex-col">
+            <div className="flex-1 min-h-0 bg-stage-950 flex items-center justify-center p-4">
+              <Preview />
+            </div>
+            <PreviewTransport />
           </div>
+          <div className="w-72 shrink-0 border-l border-stage-800 bg-stage-900 flex flex-col">
+            <PropertiesPanel />
+          </div>
+          <MasterMeter />
         </div>
-        {/* 右：プロパティ／エフェクト */}
-        <div className="w-72 shrink-0 border-l border-stage-800 bg-stage-900 flex flex-col">
-          <PropertiesPanel />
+        {/* 下段：タイムライン（全幅） */}
+        <div className="h-[42%] min-h-[260px] border-t border-stage-800 bg-stage-900">
+          <Timeline />
         </div>
       </div>
       <StatusBar />
