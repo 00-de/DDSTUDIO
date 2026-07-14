@@ -52,6 +52,7 @@
       "dist-electron"
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -63,6 +64,7 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false,
+      "installerIcon": "build/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "DayDream Studio"
