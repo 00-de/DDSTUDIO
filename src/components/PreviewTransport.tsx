@@ -83,7 +83,7 @@ function TBtn({ title, onClick, children, big }: { title: string; onClick: () =>
       onClick={onClick}
       className={
         'flex items-center justify-center rounded-md transition-colors ' +
-        (big ? 'w-9 h-8 text-dream-violet hover:text-white hover:bg-stage-750' : 'w-7 h-7 text-stage-600 hover:text-white hover:bg-stage-800')
+        (big ? 'w-9 h-8 text-dream-violet hover:text-dream-violet hover:bg-stage-750' : 'w-7 h-7 text-stage-600 hover:text-dream-violet hover:bg-stage-800')
       }
     >
       {children}

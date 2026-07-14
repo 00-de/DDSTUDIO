@@ -100,7 +100,7 @@ export default function Timeline() {
                 <div className="flex-1 min-w-0 flex flex-col justify-center px-1.5 gap-1">
                   <div className="flex items-center gap-1">
                     <span className="text-[9px] text-stage-600 w-3 text-center shrink-0">{idx + 1}</span>
-                    <span className="text-[11px] text-white/80 truncate flex-1">{tr.name}</span>
+                    <span className="text-[11px] text-slate-700 truncate flex-1">{tr.name}</span>
                     <HdrBtn on={tr.muted} label="M" title="ミュート" onClick={() => updateTrack(tr.id, { muted: !tr.muted })} />
                     <HdrBtn on={!!tr.solo} label="S" title="ソロ" onClick={() => updateTrack(tr.id, { solo: !tr.solo })} accent />
                     <HdrBtn on={tr.hidden} label="👁" title="表示/非表示" onClick={() => updateTrack(tr.id, { hidden: !tr.hidden })} />
@@ -121,7 +121,7 @@ export default function Timeline() {
                   const selected = c.id === selectedClipId
                   return (
                     <div key={c.id} onPointerDown={(e) => onClipPointerDown(e, c)}
-                      className={'absolute top-1 bottom-1 rounded-md px-2 flex items-center overflow-hidden cursor-grab active:cursor-grabbing ' + (selected ? 'ring-2 ring-white z-10' : 'ring-1 ring-black/30')}
+                      className={'absolute top-1 bottom-1 rounded-md px-2 flex items-center overflow-hidden cursor-grab active:cursor-grabbing ' + (selected ? 'ring-2 ring-dream-violet z-10' : 'ring-1 ring-black/20')}
                       style={{ left: c.start * zoom, width: Math.max(c.duration * zoom, 8), background: `linear-gradient(180deg, ${c.color}dd, ${c.color}99)` }}
                       title={c.label}>
                       <span className="text-[11px] font-medium text-white truncate drop-shadow">{c.label}</span>
@@ -158,7 +158,7 @@ function HdrBtn({ on, label, title, onClick, accent }: { on: boolean; label: str
         'w-4 h-4 rounded-sm text-[8px] font-bold flex items-center justify-center shrink-0 transition-colors ' +
         (on
           ? (accent ? 'bg-dream-cyan text-black' : 'bg-dream-pink text-white')
-          : 'bg-stage-800 text-stage-600 hover:text-white')
+          : 'bg-stage-800 text-stage-600 hover:text-dream-violet')
       }
     >
       {label}

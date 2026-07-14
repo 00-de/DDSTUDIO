@@ -56,7 +56,7 @@ export default function MaterialPanel() {
           <div className="p-2">
             <button
               onClick={() => importMedia()}
-              className="w-full h-9 rounded-md border border-dashed border-stage-700 text-sm text-stage-600 hover:border-dream-violet hover:text-white transition-colors"
+              className="w-full h-9 rounded-md border border-dashed border-stage-700 text-sm text-stage-600 hover:border-dream-violet hover:text-dream-violet transition-colors"
             >
               ＋ 素材を読み込む
             </button>
@@ -88,7 +88,7 @@ export default function MaterialPanel() {
                     </div>
                     <div className="px-1.5 py-1 flex items-center gap-1">
                       <span className="text-xs">{KIND_ICON[a.kind]}</span>
-                      <span className="text-[11px] truncate text-stage-600 group-hover:text-white">{a.name}</span>
+                      <span className="text-[11px] truncate text-stage-600 group-hover:text-dream-violet">{a.name}</span>
                     </div>
                   </div>
                 ))}
@@ -140,7 +140,7 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
       onClick={onClick}
       className={
         'flex-1 h-9 text-sm font-medium transition-colors ' +
-        (active ? 'text-white border-b-2 border-dream-violet' : 'text-stage-600 hover:text-white')
+        (active ? 'text-dream-violet border-b-2 border-dream-violet' : 'text-stage-600 hover:text-dream-violet')
       }
     >
       {children}

@@ -220,7 +220,7 @@ function Tab({ active, onClick, children }: { active: boolean; onClick: () => vo
   return (
     <button
       onClick={onClick}
-      className={'flex-1 h-9 text-xs font-medium transition-colors ' + (active ? 'text-white border-b-2 border-dream-violet' : 'text-stage-600 hover:text-white')}
+      className={'flex-1 h-9 text-xs font-medium transition-colors ' + (active ? 'text-dream-violet border-b-2 border-dream-violet' : 'text-stage-600 hover:text-dream-violet')}
     >
       {children}
     </button>
@@ -244,7 +244,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 function Chip({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className="text-xs px-2.5 py-1 rounded-full border border-stage-700 bg-stage-850 hover:border-dream-violet hover:text-white text-stage-600 transition-colors">
+    <button onClick={onClick} className="text-xs px-2.5 py-1 rounded-full border border-stage-700 bg-stage-850 hover:border-dream-violet hover:text-dream-violet text-stage-600 transition-colors">
       {children}
     </button>
   )
@@ -252,7 +252,7 @@ function Chip({ onClick, children }: { onClick: () => void; children: React.Reac
 function MiniToggle({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={'text-xs px-2 py-1 rounded-md border transition-colors ' + (on ? 'dream-gradient text-white border-transparent' : 'border-stage-700 text-stage-600 hover:text-white')}>
+      className={'text-xs px-2 py-1 rounded-md border transition-colors ' + (on ? 'dream-gradient text-white border-transparent' : 'border-stage-700 text-stage-600 hover:text-dream-violet')}>
       {children}
     </button>
   )

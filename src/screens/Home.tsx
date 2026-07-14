@@ -28,7 +28,7 @@ export default function Home() {
             </div>
             <h1 className="text-6xl font-black leading-none">
               <span className="dream-text">DayDream</span>{' '}
-              <span className="text-white">Studio</span>
+              <span className="text-slate-800">Studio</span>
             </h1>
             <p className="mt-4 text-stage-600 max-w-lg">
               ライブ・MV・スクリーン映像・歌詞演出に特化した、DayDreamプラス専用の映像編集ソフト。

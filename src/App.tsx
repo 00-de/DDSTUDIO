@@ -21,7 +21,7 @@ export default function App() {
   const modal = useStore((s) => s.modal)
 
   return (
-    <div className="h-full w-full bg-stage-950 text-white flex flex-col font-sans">
+    <div className="h-full w-full bg-stage-950 text-slate-800 flex flex-col font-sans">
       <AnimatePresence mode="wait">
         {screen === 'home' ? (
           <motion.div

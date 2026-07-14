@@ -53,19 +53,15 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
+          "target": "portable",
           "arch": ["x64"]
         }
       ],
-      "artifactName": "DayDreamStudio-Setup-${version}.${ext}"
+      "artifactName": "DayDreamStudio-Portable-${version}.${ext}"
     },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "DayDream Studio"
+    "portable": {
+      "unpackDirName": "DayDreamStudio",
+      "artifactName": "DayDreamStudio-Portable-${version}.exe"
     }
   }
 }

@@ -111,7 +111,7 @@ export default function ExportModal() {
             {done.ok && done.filePath && (
               <button
                 onClick={() => window.dds.showInFolder(done.filePath!)}
-                className="ml-2 underline hover:text-white"
+                className="ml-2 underline hover:text-dream-violet"
               >
                 フォルダを開く
               </button>
@@ -142,7 +142,7 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
       onClick={onClick}
       className={
         'px-3 py-1.5 rounded-md text-sm transition-colors ' +
-        (active ? 'dream-gradient text-white' : 'border border-stage-700 text-stage-600 hover:border-dream-violet hover:text-white')
+        (active ? 'dream-gradient text-white' : 'border border-stage-700 text-stage-600 hover:border-dream-violet hover:text-dream-violet')
       }
     >
       {children}

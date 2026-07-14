@@ -21,7 +21,7 @@ function Btn({
       onClick={onClick}
       className={
         'h-8 w-8 tool-btn ' +
-        (accent ? 'text-dream-violet hover:text-white ' : '') +
+        (accent ? 'text-dream-violet hover:text-dream-violet ' : '') +
         (disabled ? 'opacity-30 cursor-default' : '')
       }
     >
@@ -127,7 +127,7 @@ export default function ToolBar() {
 
       <button
         onClick={() => s.openModal('telop')}
-        className="h-8 px-3 rounded-md border border-stage-700 text-stage-600 hover:text-white hover:border-dream-violet text-sm font-medium flex items-center gap-1.5 mr-1"
+        className="h-8 px-3 rounded-md border border-stage-700 text-stage-600 hover:text-dream-violet hover:border-dream-violet text-sm font-medium flex items-center gap-1.5 mr-1"
         title="テロップ・歌詞を追加"
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
