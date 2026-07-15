@@ -16,6 +16,7 @@ const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
 let win: BrowserWindow | null = null
+let splash: BrowserWindow | null = null
 
 // ---- FFmpeg のパス解決（パッケージ後は asar.unpacked を参照）----
 function resolveFfmpegPath(): string {
@@ -26,13 +27,34 @@ function resolveFfmpegPath(): string {
   return p.replace('app.asar', 'app.asar.unpacked')
 }
 
+function createSplash() {
+  splash = new BrowserWindow({
+    width: 460,
+    height: 300,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    center: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  })
+  // dist-electron/main.js から見た splash.html の場所
+  const splashPath = app.isPackaged
+    ? path.join(process.env.APP_ROOT!, 'dist-electron', 'splash.html')
+    : path.join(__dirname, '..', 'electron', 'splash.html')
+  splash.loadFile(splashPath, { query: { v: app.getVersion() } }).catch(() => {})
+  splash.once('ready-to-show', () => splash?.show())
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 1100,
     minHeight: 680,
-    backgroundColor: '#0B0C11',
+    backgroundColor: '#F3F0FF',
     show: false,
     autoHideMenuBar: true,
     title: 'DayDream Studio',
@@ -44,7 +66,16 @@ function createWindow() {
     },
   })
 
-  win.once('ready-to-show', () => win?.show())
+  // 準備できたらスプラッシュを閉じてメインを表示（最低1.2秒は見せる）
+  const startedAt = Date.now()
+  win.once('ready-to-show', () => {
+    const wait = Math.max(0, 1200 - (Date.now() - startedAt))
+    setTimeout(() => {
+      if (splash && !splash.isDestroyed()) { splash.close(); splash = null }
+      win?.show()
+      win?.focus()
+    }, wait)
+  })
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
@@ -61,6 +92,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null) // 独自メニューバーを React 側に持たせる
+  createSplash()
   createWindow()
   setupAutoUpdate()
 

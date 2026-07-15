@@ -3,6 +3,22 @@ import react from '@vitejs/plugin-react'
 import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
 import { resolve } from 'node:path'
+import { copyFileSync, mkdirSync } from 'node:fs'
+
+// splash.html を dist-electron へコピーする（パッケージ後も参照できるように）
+function copySplash() {
+  return {
+    name: 'copy-splash',
+    closeBundle() {
+      try {
+        mkdirSync(resolve(__dirname, 'dist-electron'), { recursive: true })
+        copyFileSync(resolve(__dirname, 'electron/splash.html'), resolve(__dirname, 'dist-electron/splash.html'))
+      } catch (e) {
+        console.warn('splash.html のコピーに失敗:', e)
+      }
+    },
+  }
+}
 
 export default defineConfig({
   base: './',
@@ -40,6 +56,7 @@ export default defineConfig({
       },
     ]),
     renderer(),
+    copySplash(),
   ],
   build: {
     outDir: 'dist',
