@@ -125,6 +125,39 @@ export default function ToolBar() {
 
       <div className="ml-auto" />
 
+      {/* 参加者アイコン */}
+      {s.collabOn && (
+        <div className="flex items-center gap-1 mr-2">
+          <span className="flex -space-x-1.5">
+            {s.peers.slice(0, 5).map((p) => (
+              <span key={p.id} title={p.name}
+                className="w-6 h-6 rounded-full border-2 border-white text-white text-[10px] font-bold flex items-center justify-center shadow"
+                style={{ background: p.color }}>
+                {p.name.slice(0, 1)}
+              </span>
+            ))}
+          </span>
+          {s.peers.length > 5 && <span className="text-[10px] text-stage-600">+{s.peers.length - 5}</span>}
+        </div>
+      )}
+
+      <button
+        onClick={() => s.openModal('collab')}
+        title="チームで同時編集"
+        className={
+          'h-8 px-3 rounded-md text-sm font-medium flex items-center gap-1.5 mr-1 border transition-colors ' +
+          (s.collabOn
+            ? 'border-emerald-400 text-emerald-600 bg-emerald-50'
+            : 'border-stage-700 text-stage-600 hover:text-dream-violet hover:border-dream-violet')
+        }
+      >
+        {s.collabOn && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {s.collabOn ? `${s.peers.length + 1}人` : '共同編集'}
+      </button>
+
       <button
         onClick={() => s.openModal('telop')}
         className="h-8 px-3 rounded-md border border-stage-700 text-stage-600 hover:text-dream-violet hover:border-dream-violet text-sm font-medium flex items-center gap-1.5 mr-1"

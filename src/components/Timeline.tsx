@@ -12,6 +12,7 @@ export default function Timeline() {
   const zoom = useStore((s) => s.zoom)
   const currentTime = useStore((s) => s.currentTime)
   const selectedClipId = useStore((s) => s.selectedClipId)
+  const peers = useStore((s) => s.peers)
   const { setCurrentTime, selectClip, moveClip, setZoom, updateTrack, addTrack, removeTrack, moveTrack } = useStore()
   const scrollRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ id: string; grabDx: number } | null>(null)
@@ -194,6 +195,17 @@ export default function Timeline() {
             </div>
             )
           })}
+
+          {/* 他の参加者の再生ヘッド */}
+          {peers.map((p) => (
+            <div key={p.id} className="absolute top-0 bottom-0 w-px z-10 pointer-events-none"
+              style={{ left: HEADER_W + p.currentTime * zoom, background: p.color, opacity: 0.75 }}>
+              <div className="absolute top-0 left-0 px-1 rounded-sm text-[8px] font-bold text-white whitespace-nowrap"
+                style={{ background: p.color }}>
+                {p.name}
+              </div>
+            </div>
+          ))}
 
           {/* 再生ヘッド */}
           <div className="absolute top-0 bottom-0 w-px bg-dream-pink z-10 pointer-events-none" style={{ left: HEADER_W + currentTime * zoom }}>

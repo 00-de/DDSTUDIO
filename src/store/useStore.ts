@@ -63,7 +63,11 @@ interface StoreState {
   recent: RecentItem[]
   settings: Settings
   // モーダル
-  modal: null | 'settings' | 'export' | 'telop'
+  modal: null | 'settings' | 'export' | 'telop' | 'collab'
+  // 共同編集
+  collabOn: boolean
+  collabRoom: string
+  peers: { id: string; name: string; color: string; currentTime: number; selectedClipId?: string; at: number }[]
 
   // ---- 操作 ----
   goHome: () => void
@@ -133,6 +137,9 @@ export const useStore = create<StoreState>((set, get) => ({
     savePath: '',
   },
   modal: null,
+  collabOn: false,
+  collabRoom: '',
+  peers: [],
 
   goHome: () => set({ screen: 'home' }),
 

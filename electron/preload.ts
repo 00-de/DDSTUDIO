@@ -31,6 +31,9 @@ const api = {
 
   showInFolder: (filePath: string): Promise<void> => ipcRenderer.invoke('shell:showInFolder', filePath),
 
+  relinkMedia: (names: string[]): Promise<{ ok: boolean; folder?: string; found?: Record<string, { path: string; url: string }>; matched?: number; canceled?: boolean }> =>
+    ipcRenderer.invoke('media:relink', names),
+
   saveTextFile: (content: string, ext: string, filterName: string): Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }> =>
     ipcRenderer.invoke('file:saveText', { content, ext, filterName }),
 

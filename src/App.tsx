@@ -15,6 +15,7 @@ import StatusBar from '@/components/StatusBar'
 import SettingsModal from '@/components/SettingsModal'
 import ExportModal from '@/components/ExportModal'
 import TelopModal from '@/components/TelopModal'
+import CollabModal from '@/components/CollabModal'
 
 export default function App() {
   const screen = useStore((s) => s.screen)
@@ -51,6 +52,7 @@ export default function App() {
         {modal === 'settings' && <SettingsModal key="settings" />}
         {modal === 'export' && <ExportModal key="export" />}
         {modal === 'telop' && <TelopModal key="telop" />}
+        {modal === 'collab' && <CollabModal key="collab" />}
       </AnimatePresence>
     </div>
   )

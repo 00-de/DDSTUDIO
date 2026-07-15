@@ -15,6 +15,7 @@ declare global {
         fps: number
       }) => Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }>
       showInFolder: (filePath: string) => Promise<void>
+      relinkMedia: (names: string[]) => Promise<{ ok: boolean; folder?: string; found?: Record<string, { path: string; url: string }>; matched?: number; canceled?: boolean }>
       saveTextFile: (content: string, ext: string, filterName: string) => Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }>
       saveBakedVideo: (base64: string, format: string) => Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }>
       detectEncoder: () => Promise<string>

@@ -276,6 +276,37 @@ ipcMain.handle('export:video', async (_e, opts: {
   })
 })
 
+// 素材フォルダを選んで、ファイル名で素材を再リンク（共同編集用）
+ipcMain.handle('media:relink', async (_e, names: string[]) => {
+  if (!win) return { ok: false }
+  const res = await dialog.showOpenDialog(win, {
+    title: '素材が入っているフォルダを選んでください',
+    properties: ['openDirectory'],
+  })
+  if (res.canceled || res.filePaths.length === 0) return { ok: false, canceled: true }
+  const root = res.filePaths[0]
+
+  // フォルダを再帰的に走査（深さ4まで）
+  const found: Record<string, { path: string; url: string }> = {}
+  const want = new Set(names.map((n) => n.toLowerCase()))
+
+  const walk = (dir: string, depth: number) => {
+    if (depth > 4) return
+    let entries: fs.Dirent[]
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }) } catch { return }
+    for (const ent of entries) {
+      const full = path.join(dir, ent.name)
+      if (ent.isDirectory()) walk(full, depth + 1)
+      else if (want.has(ent.name.toLowerCase()) && !found[ent.name.toLowerCase()]) {
+        found[ent.name.toLowerCase()] = { path: full, url: pathToFileURL(full).href }
+      }
+    }
+  }
+  walk(root, 0)
+
+  return { ok: true, folder: root, found, matched: Object.keys(found).length }
+})
+
 // 書き出し先フォルダを開く
 ipcMain.handle('shell:showInFolder', (_e, filePath: string) => {
   shell.showItemInFolder(filePath)
