@@ -15,6 +15,13 @@ declare global {
         fps: number
       }) => Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }>
       showInFolder: (filePath: string) => Promise<void>
+      saveTextFile: (content: string, ext: string, filterName: string) => Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }>
+      saveBakedVideo: (base64: string, format: string) => Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }>
+      detectEncoder: () => Promise<string>
+      bakeStart: (opts: { width: number; height: number; fps: number; format: string; quality: string }) => Promise<{ ok: boolean; filePath?: string; encoder?: string; error?: string; canceled?: boolean }>
+      bakeFrame: (buf: ArrayBuffer) => Promise<{ ok: boolean; error?: string }>
+      bakeFinish: (opts?: { audio?: unknown[]; totalDuration?: number }) => Promise<{ ok: boolean; filePath?: string; error?: string; hasAudio?: boolean }>
+      bakeCancel: () => Promise<{ ok: boolean }>
       onExportProgress: (cb: (line: string) => void) => () => void
     }
   }

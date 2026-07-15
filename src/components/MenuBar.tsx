@@ -1,12 +1,29 @@
 import { useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { saveProject, openProject } from '@/lib/actions'
+import { buildEDL, buildFCPXML } from '@/lib/interop'
 
 interface MenuItem {
   label: string
   shortcut?: string
   action?: () => void
   divider?: boolean
+}
+
+async function exportInterop(kind: 'edl' | 'fcpxml') {
+  const project = useStore.getState().project
+  const hasVideo = project.tracks.some((t) => t.type === 'video' && t.clips.length > 0)
+  if (!hasVideo) {
+    alert('「動画」トラックにクリップがありません。先に素材を配置してください。')
+    return
+  }
+  if (kind === 'edl') {
+    const res = await window.dds.saveTextFile(buildEDL(project), 'edl', 'EDL (CMX3600)')
+    if (res.ok) alert('EDL を保存しました。\nVEGAS Pro なら「ファイル → 読み込み」から取り込めます。')
+  } else {
+    const res = await window.dds.saveTextFile(buildFCPXML(project), 'xml', 'Final Cut XML')
+    if (res.ok) alert('Final Cut XML を保存しました。\nPremiere / DaVinci Resolve の「読み込み」から使えます。')
+  }
 }
 
 export default function MenuBar() {
@@ -21,7 +38,10 @@ export default function MenuBar() {
       { label: '保存', shortcut: 'Ctrl+S', action: () => saveProject(false) },
       { label: '名前を付けて保存', shortcut: 'Ctrl+Shift+S', action: () => saveProject(true) },
       { label: '', divider: true },
-      { label: '書き出し', shortcut: 'Ctrl+E', action: () => s.openModal('export') },
+      { label: '他ソフト用: EDL (VEGAS/Premiere/Resolve)', action: () => exportInterop('edl') },
+      { label: '他ソフト用: Final Cut XML (Premiere/Resolve)', action: () => exportInterop('fcpxml') },
+      { label: '', divider: true },
+      { label: '書き出し (動画/画像/音声)', shortcut: 'Ctrl+E', action: () => s.openModal('export') },
       { label: 'ホームに戻る', action: () => s.goHome() },
     ],
     編集: [

@@ -31,6 +31,25 @@ const api = {
 
   showInFolder: (filePath: string): Promise<void> => ipcRenderer.invoke('shell:showInFolder', filePath),
 
+  saveTextFile: (content: string, ext: string, filterName: string): Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }> =>
+    ipcRenderer.invoke('file:saveText', { content, ext, filterName }),
+
+  saveBakedVideo: (base64: string, format: string): Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }> =>
+    ipcRenderer.invoke('export:bake', { base64, format }),
+
+  detectEncoder: (): Promise<string> => ipcRenderer.invoke('export:detectEncoder'),
+
+  bakeStart: (opts: { width: number; height: number; fps: number; format: string; quality: string }): Promise<{ ok: boolean; filePath?: string; encoder?: string; error?: string; canceled?: boolean }> =>
+    ipcRenderer.invoke('bake:start', opts),
+
+  bakeFrame: (buf: ArrayBuffer): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('bake:frame', buf),
+
+  bakeFinish: (opts?: { audio?: unknown[]; totalDuration?: number }): Promise<{ ok: boolean; filePath?: string; error?: string; hasAudio?: boolean }> =>
+    ipcRenderer.invoke('bake:finish', opts),
+
+  bakeCancel: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('bake:cancel'),
+
   onExportProgress: (cb: (line: string) => void): (() => void) => {
     const listener = (_e: unknown, line: string) => cb(line)
     ipcRenderer.on('export:progress', listener)
