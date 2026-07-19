@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { TRACK_COLORS, TRACK_DEFS } from '@/lib/catalog'
+import { getThumb } from '@/lib/thumbs'
 import type { Clip, Track, TrackType } from '@/types'
 
 const HEADER_W = 164
@@ -180,17 +181,11 @@ export default function Timeline() {
               <div className="relative border-b border-stage-800/60" style={{ width: totalWidth }}
                 onPointerMove={onClipPointerMove} onPointerUp={onClipPointerUp}
                 onClick={(e) => { if (e.target === e.currentTarget) seek(e) }}>
-                {tr.clips.map((c) => {
-                  const selected = c.id === selectedClipId
-                  return (
-                    <div key={c.id} onPointerDown={(e) => onClipPointerDown(e, c)}
-                      className={'absolute top-1 bottom-1 rounded-md px-2 flex items-center overflow-hidden cursor-grab active:cursor-grabbing ' + (selected ? 'ring-2 ring-dream-violet z-10' : 'ring-1 ring-black/20')}
-                      style={{ left: c.start * zoom, width: Math.max(c.duration * zoom, 8), background: `linear-gradient(180deg, ${c.color}dd, ${c.color}99)` }}
-                      title={c.label}>
-                      <span className="text-[11px] font-medium text-white truncate drop-shadow">{c.label}</span>
-                    </div>
-                  )
-                })}
+                {tr.clips.map((c) => (
+                  <ClipView key={c.id} clip={c} zoom={zoom} selected={c.id === selectedClipId}
+                    asset={c.assetId ? project.assets.find((a) => a.id === c.assetId) : undefined}
+                    onPointerDown={(e) => onClipPointerDown(e, c)} />
+                ))}
               </div>
             </div>
             )
@@ -212,6 +207,45 @@ export default function Timeline() {
             <div className="w-3 h-3 -ml-1.5 rotate-45 bg-dream-pink" />
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function ClipView({ clip, zoom, selected, asset, onPointerDown }: {
+  clip: Clip; zoom: number; selected: boolean
+  asset?: { id: string; url: string; kind: string; name: string }
+  onPointerDown: (e: React.PointerEvent) => void
+}) {
+  const [thumb, setThumb] = useState<string | null>(() => (asset ? getThumb(asset.id, asset.url, asset.kind) : null))
+  useEffect(() => {
+    if (!asset) return
+    if (thumb) return
+    const v = getThumb(asset.id, asset.url, asset.kind)
+    if (v) { setThumb(v); return }
+    const onReady = (e: Event) => {
+      const id = (e as CustomEvent).detail?.assetId
+      if (id === asset.id) { const val = getThumb(asset.id, asset.url, asset.kind); if (val) setThumb(val) }
+    }
+    window.addEventListener('dds-thumb-ready', onReady)
+    return () => window.removeEventListener('dds-thumb-ready', onReady)
+  }, [asset?.id, thumb])
+
+  const width = Math.max(clip.duration * zoom, 8)
+  const isMedia = asset && (asset.kind === 'video' || asset.kind === 'image')
+
+  return (
+    <div onPointerDown={onPointerDown}
+      className={'absolute top-1 bottom-1 rounded-md overflow-hidden cursor-grab active:cursor-grabbing ' + (selected ? 'ring-2 ring-dream-violet z-10' : 'ring-1 ring-black/20')}
+      style={{ left: clip.start * zoom, width, background: `linear-gradient(180deg, ${clip.color}dd, ${clip.color}99)` }}
+      title={clip.label}>
+      {isMedia && thumb && (
+        <div className="absolute inset-0 opacity-90"
+          style={{ backgroundImage: `url(${thumb})`, backgroundRepeat: 'repeat-x', backgroundSize: 'auto 100%', backgroundPosition: 'left center' }} />
+      )}
+      {isMedia && thumb && <div className="absolute inset-0 bg-black/10" />}
+      <div className="absolute inset-x-0 top-0 px-1.5 py-0.5 bg-black/35">
+        <span className="text-[10px] font-medium text-white truncate block drop-shadow">{clip.label}</span>
       </div>
     </div>
   )
