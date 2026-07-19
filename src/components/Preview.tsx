@@ -46,34 +46,21 @@ export default function Preview() {
   const selectedClipId = useStore((s) => s.selectedClipId)
   const { updateClip, selectClip } = useStore()
   const stageRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
 
-  const visual = useMemo(() => {
-    const clips = activeClips(project.tracks, t, ['video', 'image'])
-    return clips[clips.length - 1]
+  // すべての映像レイヤー（重なり順 layer → トラック順）
+  const visuals = useMemo(() => {
+    const list = activeClips(project.tracks, t, ['video', 'image'])
+    return list
+      .map((c, i) => ({ c, i }))
+      .sort((a, b) => (a.c.layer ?? 0) - (b.c.layer ?? 0) || a.i - b.i)
+      .map((o) => o.c)
   }, [project.tracks, t])
 
-  const asset = visual?.assetId ? project.assets.find((a) => a.id === visual.assetId) : undefined
   const texts = activeClips(project.tracks, t, ['lyrics', 'subtitle'])
   const bg = activeClips(project.tracks, t, ['background'])[0]
   const transitions = activeClips(project.tracks, t, ['effect']).filter((c) => c.transition)
   const cameras = activeClips(project.tracks, t, ['camera'])
   const cameraClip = cameras[cameras.length - 1]
-
-  useEffect(() => {
-    const v = videoRef.current
-    if (!v || !asset || asset.kind !== 'video' || !visual) return
-    const speed = visual.speed ?? 1
-    v.playbackRate = speed
-    v.muted = !!visual.muted || !playing
-    v.volume = (visual.volume ?? 100) / 100
-    const local = (t - visual.start) * speed
-    if (Math.abs(v.currentTime - local) > 0.3) {
-      try { v.currentTime = Math.max(0, local) } catch { /* noop */ }
-    }
-    if (playing && v.paused) v.play().catch(() => {})
-    if (!playing && !v.paused) v.pause()
-  }, [t, playing, asset, visual])
 
   const getRect = () => stageRef.current?.getBoundingClientRect()
 
@@ -96,22 +83,23 @@ export default function Preview() {
         className="relative bg-black rounded-lg overflow-hidden shadow-2xl ring-1 ring-stage-800"
         style={{ aspectRatio: '16 / 9', maxHeight: '100%', maxWidth: '100%', height: '100%' }}
       >
-        {/* カメラ演出の対象（背景＋映像） */}
-        <div className="absolute inset-0" style={{ ...cameraStyle(cameraClip, t), transformOrigin: '50% 50%' }}>
+        {/* カメラ演出の対象（背景＋映像レイヤー） */}
+        <div className="absolute inset-0" style={{ ...cameraStyle(cameraClip, t), transformOrigin: '50% 50%', perspective: '1200px' }}>
           {/* 背景 */}
           <div className="absolute inset-0" style={bg ? bgStyle(bg.label) : bgStyle(undefined)} />
 
-          {/* メインビジュアル（移動・拡大可） */}
-          {asset && visual && (
-            <Movable clip={visual} t={t} getRect={getRect} selected={visual.id === selectedClipId} fill onSelect={() => selectClip(visual.id)}>
-              {asset.kind === 'video' ? (
-                <video ref={videoRef} src={asset.url} className="w-full h-full object-contain pointer-events-none" />
-              ) : (
-                <img src={asset.url} className="w-full h-full object-contain pointer-events-none" />
-              )}
-            </Movable>
-          )}
-          {!asset && !bg && (
+          {/* 映像レイヤー（複数・重なり順・3D対応） */}
+          {visuals.map((c) => {
+            const a = c.assetId ? project.assets.find((x) => x.id === c.assetId) : undefined
+            if (!a) return null
+            return (
+              <Movable key={c.id} clip={c} t={t} getRect={getRect} selected={c.id === selectedClipId} fill onSelect={() => selectClip(c.id)}>
+                <LayerMedia asset={a} clip={c} t={t} playing={playing} />
+              </Movable>
+            )
+          })}
+
+          {visuals.length === 0 && !bg && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-14 h-14 mx-auto rounded-xl dream-gradient opacity-80 mb-3" />
@@ -161,6 +149,7 @@ function Movable({
 
   const x = clip.x ?? 0, y = clip.y ?? 0, scale = clip.scale ?? 1
   const rot = clip.rotate ?? 0, mir = clip.mirror ? -1 : 1
+  const rx = clip.rotateX ?? 0, ry = clip.rotateY ?? 0
   const op = clipOpacity(clip, t)
 
   const pctFromEvent = (clientX: number, clientY: number) => {
@@ -205,7 +194,7 @@ function Movable({
       className={'absolute ' + (fill ? 'w-full h-full ' : '') + (selected ? 'cursor-move' : 'cursor-pointer')}
       style={{
         left: `${50 + x}%`, top: `${50 + y}%`,
-        transform: `translate(-50%,-50%) scale(${scale}) rotate(${rot}deg) scaleX(${mir})`,
+        transform: `translate(-50%,-50%) rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale}) rotate(${rot}deg) scaleX(${mir})`,
         opacity: op,
         ...(fill ? {} : { whiteSpace: 'nowrap' as const }),
       }}
@@ -274,4 +263,25 @@ function findClip(tracks: ReturnType<typeof useStore.getState>['project']['track
   if (!id) return undefined
   for (const tr of tracks) { const c = tr.clips.find((c) => c.id === id); if (c) return c }
   return undefined
+}
+
+/* ===== レイヤー映像（動画は自身で再生同期） ===== */
+function LayerMedia({ asset, clip, t, playing }: { asset: { url: string; kind: string }; clip: Clip; t: number; playing: boolean }) {
+  const vref = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const v = vref.current
+    if (!v) return
+    const speed = clip.speed ?? 1
+    v.playbackRate = speed
+    v.muted = true // プレビュー音は鳴らさない（書き出し側でミックス）
+    const local = (t - clip.start) * speed
+    if (Math.abs(v.currentTime - local) > 0.3) { try { v.currentTime = Math.max(0, local) } catch { /* noop */ } }
+    if (playing && v.paused) v.play().catch(() => {})
+    if (!playing && !v.paused) v.pause()
+  }, [t, playing, clip.start, clip.speed])
+
+  if (asset.kind === 'video') {
+    return <video ref={vref} src={asset.url} className="w-full h-full object-contain pointer-events-none" />
+  }
+  return <img src={asset.url} className="w-full h-full object-contain pointer-events-none" />
 }

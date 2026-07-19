@@ -156,6 +156,24 @@ function Props() {
         </div>
       )}
 
+      {hasVisual && (
+        <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
+          <div className="text-[11px] text-dream-violet font-semibold tracking-wider">3D・重なり</div>
+          <Field label={`3D 傾き X (${clip.rotateX ?? 0}°)`}>
+            <input type="range" min="-70" max="70" className="w-full accent-dream-violet" value={clip.rotateX ?? 0} onChange={(e) => patch({ rotateX: Number(e.target.value) })} />
+          </Field>
+          <Field label={`3D 傾き Y (${clip.rotateY ?? 0}°)`}>
+            <input type="range" min="-70" max="70" className="w-full accent-dream-violet" value={clip.rotateY ?? 0} onChange={(e) => patch({ rotateY: Number(e.target.value) })} />
+          </Field>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-stage-600">重なり順</span>
+            <input type="number" className="dds-input w-16" value={clip.layer ?? 0} onChange={(e) => patch({ layer: Number(e.target.value) })} />
+            <MiniToggle on={false} onClick={() => patch({ layer: (clip.layer ?? 0) + 1 })}>前面へ</MiniToggle>
+            <MiniToggle on={false} onClick={() => patch({ layer: (clip.layer ?? 0) - 1 })}>背面へ</MiniToggle>
+          </div>
+        </div>
+      )}
+
       {isVideo && (
         <Field label={`速度 (${(clip.speed ?? 1).toFixed(2)}倍)`}>
           <input type="range" min="0.25" max="4" step="0.05" className="w-full accent-dream-violet"

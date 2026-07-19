@@ -66,11 +66,14 @@ export class Compositor {
     // カメラ演出（対象＝背景＋映像）
     const cam = activeClips(project, t, ['camera']).slice(-1)[0]
 
-    // メイン映像（最前面の video/image クリップ）
-    const vis = activeClips(project, t, ['video', 'image']).slice(-1)[0]
-    if (vis) {
-      const el = media.get(vis.id)
-      if (el) this.drawMedia(ctx, el, vis, cam, t)
+    // メイン映像（すべての video/image レイヤーを重なり順に描画）
+    const layers = activeClips(project, t, ['video', 'image'])
+      .map((c, i) => ({ c, i }))
+      .sort((a, b) => (a.c.layer ?? 0) - (b.c.layer ?? 0) || a.i - b.i)
+      .map((o) => o.c)
+    for (const c of layers) {
+      const el = media.get(c.id)
+      if (el) this.drawMedia(ctx, el, c, cam, t)
     }
 
     // 映画風レターボックス
@@ -152,6 +155,13 @@ export class Compositor {
     const sc = clip.scale ?? 1
     ctx.scale(sc * (clip.mirror ? -1 : 1), sc)
     ctx.rotate((clip.rotate ?? 0) * Math.PI / 180)
+    // 3D 傾きの近似（遠近の縮み＋わずかな傾斜）
+    const rxr = (clip.rotateX ?? 0) * Math.PI / 180
+    const ryr = (clip.rotateY ?? 0) * Math.PI / 180
+    if (rxr || ryr) {
+      ctx.scale(Math.max(0.05, Math.cos(ryr)), Math.max(0.05, Math.cos(rxr)))
+      ctx.transform(1, -Math.sin(rxr) * 0.35, Math.sin(ryr) * 0.35, 1, 0, 0)
+    }
     try { ctx.drawImage(el, -dw / 2, -dh / 2, dw, dh) } catch { /* not ready */ }
     ctx.restore()
   }

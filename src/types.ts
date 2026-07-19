@@ -54,6 +54,9 @@ export interface Clip {
   x?: number // -50〜50
   y?: number // -50〜50
   scale?: number // 拡大率 0.1〜4
+  rotateX?: number // 3D 傾き（X軸）度
+  rotateY?: number // 3D 傾き（Y軸）度
+  layer?: number // 重なり順（大きいほど前面）
   // トランジション / カメラ演出
   transition?: string // 'フェード' 等
   direction?: 'both' | 'in' | 'out' | 'left' | 'right' | 'up' | 'down'
