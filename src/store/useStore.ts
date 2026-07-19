@@ -63,7 +63,7 @@ interface StoreState {
   recent: RecentItem[]
   settings: Settings
   // モーダル
-  modal: null | 'settings' | 'export' | 'telop' | 'collab'
+  modal: null | 'settings' | 'export' | 'telop' | 'collab' | 'layout'
   // 共同編集
   collabOn: boolean
   collabRoom: string

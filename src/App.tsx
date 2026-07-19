@@ -16,6 +16,7 @@ import SettingsModal from '@/components/SettingsModal'
 import ExportModal from '@/components/ExportModal'
 import TelopModal from '@/components/TelopModal'
 import CollabModal from '@/components/CollabModal'
+import LayoutEditor from '@/components/LayoutEditor'
 
 export default function App() {
   const screen = useStore((s) => s.screen)
@@ -53,6 +54,7 @@ export default function App() {
         {modal === 'export' && <ExportModal key="export" />}
         {modal === 'telop' && <TelopModal key="telop" />}
         {modal === 'collab' && <CollabModal key="collab" />}
+        {modal === 'layout' && <LayoutEditor key="layout" />}
       </AnimatePresence>
     </div>
   )

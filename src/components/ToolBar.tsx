@@ -159,6 +159,17 @@ export default function ToolBar() {
       </button>
 
       <button
+        onClick={() => s.openModal('layout')}
+        title="レイアウト編集（別画面で配置・リサイズ・回転）"
+        className="h-8 px-3 rounded-md border border-stage-700 text-stage-600 hover:text-dream-violet hover:border-dream-violet text-sm font-medium flex items-center gap-1.5 mr-1"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18M3 9h6" strokeLinecap="round" />
+        </svg>
+        レイアウト
+      </button>
+
+      <button
         onClick={() => s.openModal('telop')}
         className="h-8 px-3 rounded-md border border-stage-700 text-stage-600 hover:text-dream-violet hover:border-dream-violet text-sm font-medium flex items-center gap-1.5 mr-1"
         title="テロップ・歌詞を追加"

@@ -5,7 +5,7 @@ import EffectsCanvas from '@/components/EffectsCanvas'
 import TransitionOverlay, { cameraStyle } from '@/components/TransitionOverlay'
 
 // 背景ラベル → CSS
-function bgStyle(label?: string): React.CSSProperties {
+export function bgStyle(label?: string): React.CSSProperties {
   switch (label) {
     case '単色': return { background: '#0b0c11' }
     case 'グラデーション': return { background: 'linear-gradient(120deg,#22d3ee,#a855f7,#ec4899)' }
