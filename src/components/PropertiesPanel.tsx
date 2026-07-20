@@ -217,6 +217,37 @@ function Props() {
         <input type="range" min="0" max="100" className="w-full accent-dream-violet" value={clip.opacity ?? 100} onChange={(e) => aset({ opacity: Number(e.target.value) })} />
       </Field>
 
+      {hasVisual && (
+        <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-dream-violet font-semibold tracking-wider">Pan / Crop（寄り・切り抜き）</span>
+            <button onClick={() => patch({ cropX: 0, cropY: 0, cropW: 100, cropH: 100 })}
+              className="text-[10px] px-2 py-0.5 rounded border border-stage-700 hover:border-dream-violet">リセット</button>
+          </div>
+          <Field label={`左位置 X (${Math.round(clip.cropX ?? 0)}%)`}>
+            <input type="range" min="0" max="95" className="w-full accent-dream-violet" value={clip.cropX ?? 0} onChange={(e) => aset({ cropX: Number(e.target.value) })} />
+          </Field>
+          <Field label={`上位置 Y (${Math.round(clip.cropY ?? 0)}%)`}>
+            <input type="range" min="0" max="95" className="w-full accent-dream-violet" value={clip.cropY ?? 0} onChange={(e) => aset({ cropY: Number(e.target.value) })} />
+          </Field>
+          <Field label={`幅 W (${Math.round(clip.cropW ?? 100)}%)`}>
+            <input type="range" min="5" max="100" className="w-full accent-dream-violet" value={clip.cropW ?? 100} onChange={(e) => aset({ cropW: Number(e.target.value) })} />
+          </Field>
+          <Field label={`高さ H (${Math.round(clip.cropH ?? 100)}%)`}>
+            <input type="range" min="5" max="100" className="w-full accent-dream-violet" value={clip.cropH ?? 100} onChange={(e) => aset({ cropH: Number(e.target.value) })} />
+          </Field>
+          <div className="flex gap-1.5">
+            <button onClick={() => aset({ cropX: 25, cropY: 25, cropW: 50, cropH: 50 })}
+              className="text-[10px] px-2 py-1 rounded border border-stage-700 hover:border-dream-violet flex-1">中央に寄る</button>
+            <button onClick={() => aset({ cropX: 0, cropY: 20, cropW: 60, cropH: 60 })}
+              className="text-[10px] px-2 py-1 rounded border border-stage-700 hover:border-dream-violet flex-1">左に寄る</button>
+            <button onClick={() => aset({ cropX: 40, cropY: 20, cropW: 60, cropH: 60 })}
+              className="text-[10px] px-2 py-1 rounded border border-stage-700 hover:border-dream-violet flex-1">右に寄る</button>
+          </div>
+          <div className="text-[10px] text-stage-600">キーフレームと併用：全体表示で◆追加→先で「中央に寄る」して◆追加、で寄っていくアニメになります。</div>
+        </div>
+      )}
+
       {(hasVisual || isText) && (
         <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
           <div className="flex items-center justify-between">

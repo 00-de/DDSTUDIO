@@ -285,8 +285,26 @@ function LayerMedia({ asset, clip, t, playing }: { asset: { url: string; kind: s
     if (!playing && !v.paused) v.pause()
   }, [t, playing, clip.start, clip.speed])
 
+  const cx = clip.cropX ?? 0, cy = clip.cropY ?? 0, cw = clip.cropW ?? 100, ch = clip.cropH ?? 100
+  const cropActive = cx > 0 || cy > 0 || cw < 100 || ch < 100
+  const cropStyle: React.CSSProperties = cropActive
+    ? { position: 'absolute', width: `${10000 / cw}%`, height: `${10000 / ch}%`, left: `${(-100 * cx) / cw}%`, top: `${(-100 * cy) / ch}%`, objectFit: 'fill' }
+    : {}
+
   if (asset.kind === 'video') {
-    return <video ref={vref} src={asset.url} className="w-full h-full object-contain pointer-events-none" />
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        <video ref={vref} src={asset.url}
+          className={cropActive ? 'pointer-events-none' : 'w-full h-full object-contain pointer-events-none'}
+          style={cropStyle} />
+      </div>
+    )
   }
-  return <img src={asset.url} className="w-full h-full object-contain pointer-events-none" />
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <img src={asset.url}
+        className={cropActive ? 'pointer-events-none' : 'w-full h-full object-contain pointer-events-none'}
+        style={cropStyle} />
+    </div>
+  )
 }

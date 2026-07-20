@@ -164,7 +164,19 @@ export class Compositor {
       ctx.scale(Math.max(0.05, Math.cos(ryr)), Math.max(0.05, Math.cos(rxr)))
       ctx.transform(1, -Math.sin(rxr) * 0.35, Math.sin(ryr) * 0.35, 1, 0, 0)
     }
-    try { ctx.drawImage(el, -dw / 2, -dh / 2, dw, dh) } catch { /* not ready */ }
+    const cx = clip.cropX ?? 0, cy = clip.cropY ?? 0, cw = clip.cropW ?? 100, ch = clip.cropH ?? 100
+    const cropActive = cx > 0 || cy > 0 || cw < 100 || ch < 100
+    if (cropActive) {
+      // ソースの一部（crop 領域）をクリップ表示領域いっぱいに描画
+      const sx = (cx / 100) * ew, sy = (cy / 100) * eh
+      const sw = (cw / 100) * ew, sh = (ch / 100) * eh
+      // crop 後のアスペクトでフレームにフィット
+      const fit = Math.min(w / sw, h / sh)
+      const dwc = sw * fit, dhc = sh * fit
+      try { ctx.drawImage(el, sx, sy, sw, sh, -dwc / 2, -dhc / 2, dwc, dhc) } catch { /* not ready */ }
+    } else {
+      try { ctx.drawImage(el, -dw / 2, -dh / 2, dw, dh) } catch { /* not ready */ }
+    }
     ctx.restore()
   }
 

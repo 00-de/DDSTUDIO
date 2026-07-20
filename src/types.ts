@@ -57,6 +57,11 @@ export interface Clip {
   rotateX?: number // 3D 傾き（X軸）度
   rotateY?: number // 3D 傾き（Y軸）度
   layer?: number // 重なり順（大きいほど前面）
+  // Pan/Crop（素材の一部を切り出して表示）0〜100 の%。crop で囲った領域が画面いっぱいに表示される
+  cropX?: number // 左端 %（0〜100）
+  cropY?: number // 上端 %（0〜100）
+  cropW?: number // 幅 %（0〜100、既定100）
+  cropH?: number // 高さ %（0〜100、既定100）
   // トランジション / カメラ演出
   transition?: string // 'フェード' 等
   direction?: 'both' | 'in' | 'out' | 'left' | 'right' | 'up' | 'down'
@@ -74,6 +79,10 @@ export interface KeyframeValues {
   rotateX?: number
   rotateY?: number
   opacity?: number
+  cropX?: number
+  cropY?: number
+  cropW?: number
+  cropH?: number
 }
 export interface Keyframe {
   id: string
