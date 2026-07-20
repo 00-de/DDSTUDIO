@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { TRACK_COLORS, TRACK_DEFS } from '@/lib/catalog'
-import { getThumb } from '@/lib/thumbs'
+import { getStrip } from '@/lib/thumbs'
 import type { Clip, Track, TrackType } from '@/types'
 
 const HEADER_W = 164
@@ -217,34 +217,44 @@ function ClipView({ clip, zoom, selected, asset, onPointerDown }: {
   asset?: { id: string; url: string; kind: string; name: string }
   onPointerDown: (e: React.PointerEvent) => void
 }) {
-  const [thumb, setThumb] = useState<string | null>(() => (asset ? getThumb(asset.id, asset.url, asset.kind) : null))
+  const width = Math.max(clip.duration * zoom, 8)
+  const isMedia = asset && (asset.kind === 'video' || asset.kind === 'image')
+  // クリップ幅に応じて必要なフレーム数（1枚あたり約72px）
+  const frameCount = isMedia ? Math.max(1, Math.min(40, Math.ceil(width / 72))) : 0
+
+  const [frames, setFrames] = useState<string[] | null>(
+    () => (isMedia && asset ? getStrip(asset.id, asset.url, asset.kind, frameCount) : null)
+  )
+
   useEffect(() => {
-    if (!asset) return
-    if (thumb) return
-    const v = getThumb(asset.id, asset.url, asset.kind)
-    if (v) { setThumb(v); return }
+    if (!isMedia || !asset) return
+    const got = getStrip(asset.id, asset.url, asset.kind, frameCount)
+    if (got) { setFrames(got); return }
+    setFrames(null)
     const onReady = (e: Event) => {
       const id = (e as CustomEvent).detail?.assetId
-      if (id === asset.id) { const val = getThumb(asset.id, asset.url, asset.kind); if (val) setThumb(val) }
+      if (id === asset.id) { const g = getStrip(asset.id, asset.url, asset.kind, frameCount); if (g) setFrames(g) }
     }
     window.addEventListener('dds-thumb-ready', onReady)
     return () => window.removeEventListener('dds-thumb-ready', onReady)
-  }, [asset?.id, thumb])
-
-  const width = Math.max(clip.duration * zoom, 8)
-  const isMedia = asset && (asset.kind === 'video' || asset.kind === 'image')
+  }, [asset?.id, frameCount, isMedia])
 
   return (
     <div onPointerDown={onPointerDown}
       className={'absolute top-1 bottom-1 rounded-md overflow-hidden cursor-grab active:cursor-grabbing ' + (selected ? 'ring-2 ring-dream-violet z-10' : 'ring-1 ring-black/20')}
       style={{ left: clip.start * zoom, width, background: `linear-gradient(180deg, ${clip.color}dd, ${clip.color}99)` }}
       title={clip.label}>
-      {isMedia && thumb && (
-        <div className="absolute inset-0 opacity-90"
-          style={{ backgroundImage: `url(${thumb})`, backgroundRepeat: 'repeat-x', backgroundSize: 'auto 100%', backgroundPosition: 'left center' }} />
+      {/* フィルムストリップ（複数フレームを横に並べる） */}
+      {isMedia && frames && frames.length > 0 && (
+        <div className="absolute inset-0 flex">
+          {Array.from({ length: frameCount }).map((_, i) => (
+            <div key={i} className="h-full bg-center bg-cover shrink-0"
+              style={{ width: `${100 / frameCount}%`, backgroundImage: `url(${frames[Math.min(i, frames.length - 1)]})` }} />
+          ))}
+        </div>
       )}
-      {isMedia && thumb && <div className="absolute inset-0 bg-black/10" />}
-      <div className="absolute inset-x-0 top-0 px-1.5 py-0.5 bg-black/35">
+      {isMedia && frames && frames.length > 0 && <div className="absolute inset-0 bg-black/5" />}
+      <div className="absolute inset-x-0 top-0 px-1.5 py-0.5 bg-black/40">
         <span className="text-[10px] font-medium text-white truncate block drop-shadow">{clip.label}</span>
       </div>
       {/* キーフレームマーカー */}

@@ -1,11 +1,33 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { importMedia } from '@/lib/actions'
 import { MEMBERS } from '@/lib/catalog'
 import { kindFromExt, getMediaDuration } from '@/lib/media'
+import { getThumb } from '@/lib/thumbs'
 import type { MediaAsset, MediaKind } from '@/types'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
+
+// 素材サムネイル（動画は真っ黒回避のため生成したフレームを使う）
+function AssetThumb({ asset }: { asset: MediaAsset }) {
+  const [thumb, setThumb] = useState<string | null>(() => getThumb(asset.id, asset.url, asset.kind))
+  useEffect(() => {
+    if (thumb) return
+    const g = getThumb(asset.id, asset.url, asset.kind)
+    if (g) { setThumb(g); return }
+    const onReady = (e: Event) => {
+      if ((e as CustomEvent).detail?.assetId === asset.id) {
+        const v = getThumb(asset.id, asset.url, asset.kind)
+        if (v) setThumb(v)
+      }
+    }
+    window.addEventListener('dds-thumb-ready', onReady)
+    return () => window.removeEventListener('dds-thumb-ready', onReady)
+  }, [asset.id, thumb])
+
+  if (thumb) return <img src={thumb} className="w-full h-full object-cover" />
+  return <span className="text-2xl opacity-50">{asset.kind === 'video' ? '🎞' : '🖼'}</span>
+}
 
 const KIND_ICON: Record<MediaKind, string> = { video: '🎞', image: '🖼', audio: '🎵' }
 
@@ -77,11 +99,7 @@ export default function MaterialPanel() {
                   >
                     <div className="aspect-video bg-stage-950 flex items-center justify-center overflow-hidden">
                       {a.kind === 'image' || a.kind === 'video' ? (
-                        a.kind === 'image' ? (
-                          <img src={a.url} className="w-full h-full object-cover" />
-                        ) : (
-                          <video src={a.url} className="w-full h-full object-cover" muted />
-                        )
+                        <AssetThumb asset={a} />
                       ) : (
                         <span className="text-2xl">🎵</span>
                       )}
