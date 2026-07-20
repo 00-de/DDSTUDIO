@@ -140,29 +140,37 @@ export default function Timeline() {
           {project.tracks.map((tr, idx) => {
             const h = tr.height ?? LANE_H
             return (
-            <div key={tr.id} className="flex" style={{ height: h }}>
+            <div key={tr.id} className="flex" style={{ height: h, opacity: dragTrack === tr.id ? 0.4 : 1 }}>
               {/* 見出し（左固定・VEGAS 風） */}
               <div
                 className={'sticky left-0 z-20 bg-stage-900 border-r border-stage-800/60 flex shrink-0 relative group ' + (dropTrack === tr.id ? 'border-t-2 border-t-dream-violet' : 'border-b')}
                 style={{ width: HEADER_W }}
-                onDragOver={(e) => { if (dragTrack && dragTrack !== tr.id) { e.preventDefault(); setDropTrack(tr.id) } }}
+                onDragOver={(e) => { if (e.dataTransfer.types.includes('dds/track')) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (dropTrack !== tr.id) setDropTrack(tr.id) } }}
+                onDragLeave={() => { if (dropTrack === tr.id) setDropTrack(null) }}
                 onDrop={(e) => {
+                  if (!e.dataTransfer.types.includes('dds/track')) return
                   e.preventDefault()
-                  if (dragTrack) { const to = project.tracks.findIndex((x) => x.id === tr.id); moveTrackTo(dragTrack, to) }
+                  const id = e.dataTransfer.getData('dds/track')
+                  if (id) { const to = project.tracks.findIndex((x) => x.id === tr.id); moveTrackTo(id, to) }
                   setDragTrack(null); setDropTrack(null)
                 }}
               >
                 <div className="w-1 shrink-0" style={{ background: TRACK_COLORS[tr.type] }} />
-                {/* 並び替え + 番号（ドラッグでも並び替え可） */}
+                {/* ドラッグ用グリップ + 並び替え + 番号 */}
                 <div
-                  className="flex flex-col items-center justify-center px-0.5 shrink-0 cursor-grab active:cursor-grabbing"
+                  className="flex flex-col items-center justify-center px-1 shrink-0 cursor-grab active:cursor-grabbing hover:bg-stage-850 rounded"
                   draggable
-                  onDragStart={(e) => { setDragTrack(tr.id); e.dataTransfer.effectAllowed = 'move' }}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('dds/track', tr.id)
+                    e.dataTransfer.effectAllowed = 'move'
+                    setDragTrack(tr.id)
+                  }}
                   onDragEnd={() => { setDragTrack(null); setDropTrack(null) }}
-                  title="ドラッグで並び替え"
+                  title="ドラッグでトラックを並び替え"
                 >
                   <button title="上へ" onClick={() => moveTrack(tr.id, 'up')} disabled={idx === 0}
                     className="text-[8px] leading-none text-stage-600 hover:text-dream-violet disabled:opacity-20">▲</button>
+                  <span className="text-[11px] leading-none text-stage-500 select-none" style={{ letterSpacing: '-1px' }}>⠿</span>
                   <span className="text-[10px] font-bold text-slate-500 leading-tight">{idx + 1}</span>
                   <button title="下へ" onClick={() => moveTrack(tr.id, 'down')} disabled={idx === project.tracks.length - 1}
                     className="text-[8px] leading-none text-stage-600 hover:text-dream-violet disabled:opacity-20">▼</button>

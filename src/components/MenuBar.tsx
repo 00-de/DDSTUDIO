@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { saveProject, openProject } from '@/lib/actions'
 import { buildEDL, buildFCPXML } from '@/lib/interop'
@@ -28,6 +28,8 @@ async function exportInterop(kind: 'edl' | 'fcpxml') {
 
 export default function MenuBar() {
   const [open, setOpen] = useState<string | null>(null)
+  const [version, setVersion] = useState('')
+  useEffect(() => { window.dds?.getVersion().then(setVersion).catch(() => {}) }, [])
   const s = useStore()
 
   const menus: Record<string, MenuItem[]> = {
@@ -61,7 +63,7 @@ export default function MenuBar() {
       { label: '環境設定', action: () => s.openModal('settings') },
     ],
     ヘルプ: [
-      { label: 'DayDream Studio について', action: () => alert('DayDream Studio Ver.1.0\nDayDreamプラス専用 ライブ演出映像編集ソフト') },
+      { label: 'DayDream Studio について', action: () => alert('DayDream Studio Ver.' + (version || '—') + '\nDayDreamプラス専用 ライブ演出映像編集ソフト') },
     ],
   }
 
