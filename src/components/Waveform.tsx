@@ -2,25 +2,25 @@ import { useEffect, useRef, useState } from 'react'
 import { getWaveform } from '@/lib/waveform'
 
 // クリップ内に波形を描画する Canvas
-export default function Waveform({ assetId, url, kind, width, height, color = 'rgba(255,255,255,0.55)' }: {
-  assetId: string; url: string; kind: string; width: number; height: number; color?: string
+export default function Waveform({ assetId, src, kind, width, height, color = 'rgba(255,255,255,0.55)' }: {
+  assetId: string; src: string; kind: string; width: number; height: number; color?: string
 }) {
   const ref = useRef<HTMLCanvasElement>(null)
-  const [peaks, setPeaks] = useState<number[] | null>(() => getWaveform(assetId, url, kind))
+  const [peaks, setPeaks] = useState<number[] | null>(() => getWaveform(assetId, src, kind))
 
   useEffect(() => {
     if (peaks && peaks.length) return
-    const got = getWaveform(assetId, url, kind)
+    const got = getWaveform(assetId, src, kind)
     if (got && got.length) { setPeaks(got); return }
     const onReady = (e: Event) => {
       if ((e as CustomEvent).detail?.assetId === assetId) {
-        const g = getWaveform(assetId, url, kind)
+        const g = getWaveform(assetId, src, kind)
         if (g && g.length) setPeaks(g)
       }
     }
     window.addEventListener('dds-wave-ready', onReady)
     return () => window.removeEventListener('dds-wave-ready', onReady)
-  }, [assetId, url, kind, peaks])
+  }, [assetId, src, kind, peaks])
 
   useEffect(() => {
     const cv = ref.current

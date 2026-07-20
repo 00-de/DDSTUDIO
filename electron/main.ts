@@ -307,6 +307,17 @@ ipcMain.handle('media:relink', async (_e, names: string[]) => {
   return { ok: true, folder: root, found, matched: Object.keys(found).length }
 })
 
+// ローカルファイルをバイト列で読む（波形解析用）
+ipcMain.handle('file:readBytes', async (_e, filePath: string) => {
+  try {
+    const buf = fs.readFileSync(filePath)
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+  } catch (err) {
+    console.error('readBytes 失敗:', err)
+    return null
+  }
+})
+
 // 書き出し先フォルダを開く
 ipcMain.handle('shell:showInFolder', (_e, filePath: string) => {
   shell.showItemInFolder(filePath)

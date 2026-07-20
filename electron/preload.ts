@@ -34,6 +34,9 @@ const api = {
   relinkMedia: (names: string[]): Promise<{ ok: boolean; folder?: string; found?: Record<string, { path: string; url: string }>; matched?: number; canceled?: boolean }> =>
     ipcRenderer.invoke('media:relink', names),
 
+  readFileBytes: (filePath: string): Promise<ArrayBuffer | null> =>
+    ipcRenderer.invoke('file:readBytes', filePath),
+
   saveTextFile: (content: string, ext: string, filterName: string): Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }> =>
     ipcRenderer.invoke('file:saveText', { content, ext, filterName }),
 

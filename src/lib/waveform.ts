@@ -18,10 +18,17 @@ function notify(assetId: string) {
   window.dispatchEvent(new CustomEvent('dds-wave-ready', { detail: { assetId } }))
 }
 
-async function analyze(url: string): Promise<number[]> {
-  // fetch → arrayBuffer → decode
-  const res = await fetch(url)
-  const buf = await res.arrayBuffer()
+async function analyze(src: string): Promise<number[]> {
+  // ローカルファイルはメインプロセス経由で読む（fetch は file:// で失敗するため）
+  let buf: ArrayBuffer | null = null
+  if (window.dds?.readFileBytes) {
+    buf = await window.dds.readFileBytes(src)
+  }
+  if (!buf) {
+    // フォールバック（dev の http など）
+    const res = await fetch(src)
+    buf = await res.arrayBuffer()
+  }
   const audio = await actx().decodeAudioData(buf)
 
   const chCount = audio.numberOfChannels
@@ -52,15 +59,15 @@ async function analyze(url: string): Promise<number[]> {
   return norm
 }
 
-/** 素材の波形ピーク配列を返す。まだ無ければ解析を開始して null */
-export function getWaveform(assetId: string, url: string, kind: string): number[] | null {
+/** 素材の波形ピーク配列を返す。まだ無ければ解析を開始して null。src はファイルパス推奨 */
+export function getWaveform(assetId: string, src: string, kind: string): number[] | null {
   if (kind !== 'audio' && kind !== 'video') return null
   const hit = cache.get(assetId)
   if (hit) return hit
   if (!pending.has(assetId)) {
     const run = async () => {
       try {
-        const peaks = await analyze(url)
+        const peaks = await analyze(src)
         cache.set(assetId, peaks)
       } catch (e) {
         console.warn('波形解析に失敗:', e)

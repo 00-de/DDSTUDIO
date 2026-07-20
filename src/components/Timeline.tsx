@@ -241,7 +241,7 @@ export default function Timeline() {
 
 function ClipView({ clip, zoom, selected, asset, laneH, onPointerDown }: {
   clip: Clip; zoom: number; selected: boolean; laneH: number
-  asset?: { id: string; url: string; kind: string; name: string }
+  asset?: { id: string; url: string; path: string; kind: string; name: string }
   onPointerDown: (e: React.PointerEvent) => void
 }) {
   const width = Math.max(clip.duration * zoom, 8)
@@ -287,7 +287,7 @@ function ClipView({ clip, zoom, selected, asset, laneH, onPointerDown }: {
 
       {/* 音声波形 */}
       {hasSound && asset && (
-        <Waveform assetId={asset.id} url={asset.url} kind={asset.kind}
+        <Waveform assetId={asset.id} src={asset.path || asset.url} kind={asset.kind}
           width={width} height={isAudio ? innerH : Math.max(10, innerH * 0.42)}
           color={isAudio ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)'} />
       )}
