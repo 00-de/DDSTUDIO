@@ -3,6 +3,7 @@ import { useStore } from '@/store/useStore'
 import type { Clip } from '@/types'
 import { motion } from 'framer-motion'
 import { bgStyle } from '@/components/Preview'
+import { resolveClip } from '@/lib/keyframes'
 
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, n))
 
@@ -19,15 +20,18 @@ export default function LayoutEditor() {
   const project = useStore((s) => s.project)
   const t = useStore((s) => s.currentTime)
   const selectedClipId = useStore((s) => s.selectedClipId)
-  const { updateClip, selectClip, setCurrentTime } = useStore()
+  const { updateClip, selectClip, setCurrentTime, setAnimatedValue, addKeyframe, removeKeyframe } = useStore()
   const stageRef = useRef<HTMLDivElement>(null)
   const close = () => useStore.getState().openModal(null)
+
+  // アニメ可能な値の変更（キーフレームがあれば自動でキーフレーム化）
+  const animSet = (clip: Clip, patch: Partial<Clip>) => setAnimatedValue(clip.id, patch as never, t - clip.start)
 
   const layers = useMemo(() => {
     return activeAt(project.tracks, t, ['video', 'image'])
       .map((c, i) => ({ c, i }))
       .sort((a, b) => (a.c.layer ?? 0) - (b.c.layer ?? 0) || a.i - b.i)
-      .map((o) => o.c)
+      .map((o) => resolveClip(o.c, t))
   }, [project.tracks, t])
 
   const bg = activeAt(project.tracks, t, ['background'])[0]
@@ -61,7 +65,7 @@ export default function LayoutEditor() {
               if (!a) return null
               return (
                 <EditableLayer key={c.id} clip={c} asset={a} selected={c.id === selectedClipId}
-                  stageRef={stageRef} onSelect={() => selectClip(c.id)} onChange={(p) => updateClip(c.id, p)} />
+                  stageRef={stageRef} onSelect={() => selectClip(c.id)} onChange={(p) => animSet(c, p)} />
               )
             })}
             {layers.length === 0 && (
@@ -94,18 +98,45 @@ export default function LayoutEditor() {
 
           {sel ? (
             <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
-              <NumRow label="X位置" value={Math.round(sel.x ?? 0)} onChange={(v) => updateClip(sel.id, { x: v })} />
-              <NumRow label="Y位置" value={Math.round(sel.y ?? 0)} onChange={(v) => updateClip(sel.id, { y: v })} />
-              <NumRow label="拡大率" step={0.05} value={round(sel.scale ?? 1)} onChange={(v) => updateClip(sel.id, { scale: Math.max(0.1, v) })} />
-              <NumRow label="回転(Z)" value={Math.round(sel.rotate ?? 0)} onChange={(v) => updateClip(sel.id, { rotate: v })} />
-              <SliderRow label={`3D傾きX (${sel.rotateX ?? 0}°)`} min={-70} max={70} value={sel.rotateX ?? 0} onChange={(v) => updateClip(sel.id, { rotateX: v })} />
-              <SliderRow label={`3D傾きY (${sel.rotateY ?? 0}°)`} min={-70} max={70} value={sel.rotateY ?? 0} onChange={(v) => updateClip(sel.id, { rotateY: v })} />
-              <SliderRow label={`不透明度 (${sel.opacity ?? 100}%)`} min={0} max={100} value={sel.opacity ?? 100} onChange={(v) => updateClip(sel.id, { opacity: v })} />
+              <NumRow label="X位置" value={Math.round(sel.x ?? 0)} onChange={(v) => animSet(sel, { x: v })} />
+              <NumRow label="Y位置" value={Math.round(sel.y ?? 0)} onChange={(v) => animSet(sel, { y: v })} />
+              <NumRow label="拡大率" step={0.05} value={round(sel.scale ?? 1)} onChange={(v) => animSet(sel, { scale: Math.max(0.1, v) })} />
+              <NumRow label="回転(Z)" value={Math.round(sel.rotate ?? 0)} onChange={(v) => animSet(sel, { rotate: v })} />
+              <SliderRow label={`3D傾きX (${sel.rotateX ?? 0}°)`} min={-70} max={70} value={sel.rotateX ?? 0} onChange={(v) => animSet(sel, { rotateX: v })} />
+              <SliderRow label={`3D傾きY (${sel.rotateY ?? 0}°)`} min={-70} max={70} value={sel.rotateY ?? 0} onChange={(v) => animSet(sel, { rotateY: v })} />
+              <SliderRow label={`不透明度 (${sel.opacity ?? 100}%)`} min={0} max={100} value={sel.opacity ?? 100} onChange={(v) => animSet(sel, { opacity: v })} />
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-stage-600">重なり</span>
                 <button onClick={() => updateClip(sel.id, { layer: (sel.layer ?? 0) + 1 })} className="text-xs px-2 py-1 rounded border border-stage-700 hover:border-dream-violet">前面へ</button>
                 <button onClick={() => updateClip(sel.id, { layer: (sel.layer ?? 0) - 1 })} className="text-xs px-2 py-1 rounded border border-stage-700 hover:border-dream-violet">背面へ</button>
                 <button onClick={() => updateClip(sel.id, { mirror: !sel.mirror })} className={'text-xs px-2 py-1 rounded border ' + (sel.mirror ? 'dream-gradient text-white border-transparent' : 'border-stage-700 hover:border-dream-violet')}>反転</button>
+              </div>
+
+              {/* キーフレーム */}
+              <div className="pt-2 border-t border-stage-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-dream-violet font-semibold tracking-wider">キーフレーム（アニメ）</span>
+                  <button onClick={() => addKeyframe(sel.id, t - sel.start)}
+                    className="text-[11px] px-2 py-1 rounded-md dream-gradient text-white font-semibold hover:brightness-110">
+                    ◆ ここに追加
+                  </button>
+                </div>
+                {(sel.keyframes?.length ?? 0) === 0 ? (
+                  <div className="text-[10px] text-stage-600 leading-relaxed">
+                    再生位置を動かしながら「ここに追加」を押すと、その時刻の位置・サイズ・回転・不透明度を記録し、間を自動でアニメーションします。
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {sel.keyframes!.map((k) => (
+                      <div key={k.id} className="flex items-center gap-2 text-[11px] bg-stage-850 rounded px-2 py-1">
+                        <button onClick={() => setCurrentTime(sel.start + k.time)} className="text-dream-violet hover:underline tabular-nums">
+                          ◆ {k.time.toFixed(2)}s
+                        </button>
+                        <button onClick={() => removeKeyframe(sel.id, k.id)} className="ml-auto text-stage-600 hover:text-red-500">削除</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ) : (

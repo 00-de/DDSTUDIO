@@ -62,6 +62,24 @@ export interface Clip {
   direction?: 'both' | 'in' | 'out' | 'left' | 'right' | 'up' | 'down'
   transColor?: string
   camera?: string // 'ズーム' 等
+  keyframes?: Keyframe[] // アニメーション
+}
+
+// アニメ可能なプロパティ
+export interface KeyframeValues {
+  x?: number
+  y?: number
+  scale?: number
+  rotate?: number
+  rotateX?: number
+  rotateY?: number
+  opacity?: number
+}
+export interface Keyframe {
+  id: string
+  time: number // クリップ内の相対秒
+  values: KeyframeValues
+  ease?: 'linear' | 'easeInOut'
 }
 
 export interface Track {

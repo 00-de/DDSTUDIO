@@ -26,6 +26,11 @@ function Props() {
   const selectedId = useStore((s) => s.selectedClipId)
   const project = useStore((s) => s.project)
   const updateClip = useStore((s) => s.updateClip)
+  const addKeyframe = useStore((s) => s.addKeyframe)
+  const removeKeyframe = useStore((s) => s.removeKeyframe)
+  const setAnimatedValue = useStore((s) => s.setAnimatedValue)
+  const setCurrentTime = useStore((s) => s.setCurrentTime)
+  const currentTime = useStore((s) => s.currentTime)
   const setName = useStore((s) => s.setName)
   const setResolution = useStore((s) => s.setResolution)
   const setFps = useStore((s) => s.setFps)
@@ -61,6 +66,10 @@ function Props() {
   }
 
   const patch = (p: Partial<Clip>) => updateClip(clip.id, p)
+  // アニメ対象の値：キーフレームがあれば自動でキーフレーム更新、無ければ基準値を更新
+  const aset = (p: Partial<Clip>) => setAnimatedValue(clip.id, p as never, currentTime - clip.start)
+  const hasKf = (clip.keyframes?.length ?? 0) > 0
+  const kfActive = currentTime >= clip.start && currentTime < clip.start + clip.duration
   const isText = clip.kind === 'lyrics' || clip.kind === 'subtitle'
   const isVideo = clip.kind === 'video'
   const isImage = clip.kind === 'image'
@@ -140,7 +149,7 @@ function Props() {
       {hasVisual && (
         <div className="grid grid-cols-2 gap-2">
           <Field label="回転">
-            <select className="dds-select w-full" value={clip.rotate ?? 0} onChange={(e) => patch({ rotate: Number(e.target.value) })}>
+            <select className="dds-select w-full" value={clip.rotate ?? 0} onChange={(e) => aset({ rotate: Number(e.target.value) })}>
               <option value={0}>0°</option>
               <option value={90}>90°</option>
               <option value={180}>180°</option>
@@ -160,10 +169,10 @@ function Props() {
         <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
           <div className="text-[11px] text-dream-violet font-semibold tracking-wider">3D・重なり</div>
           <Field label={`3D 傾き X (${clip.rotateX ?? 0}°)`}>
-            <input type="range" min="-70" max="70" className="w-full accent-dream-violet" value={clip.rotateX ?? 0} onChange={(e) => patch({ rotateX: Number(e.target.value) })} />
+            <input type="range" min="-70" max="70" className="w-full accent-dream-violet" value={clip.rotateX ?? 0} onChange={(e) => aset({ rotateX: Number(e.target.value) })} />
           </Field>
           <Field label={`3D 傾き Y (${clip.rotateY ?? 0}°)`}>
-            <input type="range" min="-70" max="70" className="w-full accent-dream-violet" value={clip.rotateY ?? 0} onChange={(e) => patch({ rotateY: Number(e.target.value) })} />
+            <input type="range" min="-70" max="70" className="w-full accent-dream-violet" value={clip.rotateY ?? 0} onChange={(e) => aset({ rotateY: Number(e.target.value) })} />
           </Field>
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-stage-600">重なり順</span>
@@ -184,13 +193,13 @@ function Props() {
       {(hasVisual || isText) && (
         <div className="grid grid-cols-3 gap-2">
           <Field label="X位置">
-            <input type="number" step="1" className="dds-input w-full" value={Math.round(clip.x ?? 0)} onChange={(e) => patch({ x: Number(e.target.value) })} />
+            <input type="number" step="1" className="dds-input w-full" value={Math.round(clip.x ?? 0)} onChange={(e) => aset({ x: Number(e.target.value) })} />
           </Field>
           <Field label="Y位置">
-            <input type="number" step="1" className="dds-input w-full" value={Math.round(clip.y ?? 0)} onChange={(e) => patch({ y: Number(e.target.value) })} />
+            <input type="number" step="1" className="dds-input w-full" value={Math.round(clip.y ?? 0)} onChange={(e) => aset({ y: Number(e.target.value) })} />
           </Field>
           <Field label="拡大率">
-            <input type="number" step="0.05" min="0.1" max="4" className="dds-input w-full" value={round(clip.scale ?? 1)} onChange={(e) => patch({ scale: Math.max(0.1, Number(e.target.value)) })} />
+            <input type="number" step="0.05" min="0.1" max="4" className="dds-input w-full" value={round(clip.scale ?? 1)} onChange={(e) => aset({ scale: Math.max(0.1, Number(e.target.value)) })} />
           </Field>
         </div>
       )}
@@ -205,8 +214,44 @@ function Props() {
       </div>
 
       <Field label={`不透明度 (${clip.opacity ?? 100}%)`}>
-        <input type="range" min="0" max="100" className="w-full accent-dream-violet" value={clip.opacity ?? 100} onChange={(e) => patch({ opacity: Number(e.target.value) })} />
+        <input type="range" min="0" max="100" className="w-full accent-dream-violet" value={clip.opacity ?? 100} onChange={(e) => aset({ opacity: Number(e.target.value) })} />
       </Field>
+
+      {(hasVisual || isText) && (
+        <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-dream-violet font-semibold tracking-wider">キーフレーム（アニメ）</span>
+            <button
+              onClick={() => addKeyframe(clip.id, currentTime - clip.start)}
+              disabled={!kfActive}
+              className="text-[11px] px-2 py-1 rounded-md dream-gradient text-white font-semibold hover:brightness-110 disabled:opacity-40"
+              title={kfActive ? '再生位置に現在の値を記録' : '再生ヘッドをこのクリップの範囲に合わせてください'}
+            >
+              ◆ 再生位置に追加
+            </button>
+          </div>
+          {!hasKf ? (
+            <div className="text-[10px] text-stage-600 leading-relaxed">
+              使い方：値（位置・サイズ・回転・不透明度など）を決めて「◆ 再生位置に追加」→ 再生ヘッドを別の時刻へ移動 → 値を変えてまた追加。間が自動でアニメーションします。書き出しにも反映されます。
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {clip.keyframes!.map((k) => {
+                const atThis = Math.abs(currentTime - clip.start - k.time) < 0.05
+                return (
+                  <div key={k.id} className={'flex items-center gap-2 text-[11px] rounded px-2 py-1 ' + (atThis ? 'bg-dream-violet/20 ring-1 ring-dream-violet' : 'bg-stage-950')}>
+                    <button onClick={() => setCurrentTime(clip.start + k.time)} className="text-dream-violet hover:underline tabular-nums">
+                      ◆ {k.time.toFixed(2)}s
+                    </button>
+                    <button onClick={() => removeKeyframe(clip.id, k.id)} className="ml-auto text-stage-600 hover:text-red-500">削除</button>
+                  </div>
+                )
+              })}
+              <div className="text-[10px] text-stage-600 pt-1">◆をクリックでその時刻へ移動。値を変えると自動でそのキーフレームが更新されます。</div>
+            </div>
+          )}
+        </div>
+      )}
 
       {(isAudio || isVideo) && (
         <>

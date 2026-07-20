@@ -247,6 +247,11 @@ function ClipView({ clip, zoom, selected, asset, onPointerDown }: {
       <div className="absolute inset-x-0 top-0 px-1.5 py-0.5 bg-black/35">
         <span className="text-[10px] font-medium text-white truncate block drop-shadow">{clip.label}</span>
       </div>
+      {/* キーフレームマーカー */}
+      {clip.keyframes && clip.keyframes.map((k) => (
+        <div key={k.id} className="absolute bottom-0.5 w-2 h-2 bg-white border border-dream-violet rotate-45 -ml-1"
+          style={{ left: (k.time / Math.max(0.001, clip.duration)) * width }} title={`キーフレーム ${k.time.toFixed(2)}s`} />
+      ))}
     </div>
   )
 }

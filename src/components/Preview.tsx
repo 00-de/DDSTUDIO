@@ -3,6 +3,7 @@ import { useStore } from '@/store/useStore'
 import type { Clip } from '@/types'
 import EffectsCanvas from '@/components/EffectsCanvas'
 import TransitionOverlay, { cameraStyle } from '@/components/TransitionOverlay'
+import { resolveClip } from '@/lib/keyframes'
 
 // 背景ラベル → CSS
 export function bgStyle(label?: string): React.CSSProperties {
@@ -88,8 +89,9 @@ export default function Preview() {
           {/* 背景 */}
           <div className="absolute inset-0" style={bg ? bgStyle(bg.label) : bgStyle(undefined)} />
 
-          {/* 映像レイヤー（複数・重なり順・3D対応） */}
-          {visuals.map((c) => {
+          {/* 映像レイヤー（複数・重なり順・3D・キーフレーム対応） */}
+          {visuals.map((raw) => {
+            const c = resolveClip(raw, t)
             const a = c.assetId ? project.assets.find((x) => x.id === c.assetId) : undefined
             if (!a) return null
             return (
@@ -120,12 +122,15 @@ export default function Preview() {
         {/* エフェクト */}
         <EffectsCanvas />
 
-        {/* テロップ・歌詞（移動・拡大・その場編集可） */}
-        {texts.map((c) => (
-          <Movable key={c.id} clip={c} t={t} getRect={getRect} selected={c.id === selectedClipId} text onSelect={() => selectClip(c.id)}>
-            <TelopText clip={c} />
-          </Movable>
-        ))}
+        {/* テロップ・歌詞（移動・拡大・その場編集・キーフレーム対応） */}
+        {texts.map((raw) => {
+          const c = resolveClip(raw, t)
+          return (
+            <Movable key={c.id} clip={c} t={t} getRect={getRect} selected={c.id === selectedClipId} text onSelect={() => selectClip(c.id)}>
+              <TelopText clip={c} />
+            </Movable>
+          )
+        })}
 
         {/* トランジション（最前面） */}
         <TransitionOverlay clips={transitions} t={t} />

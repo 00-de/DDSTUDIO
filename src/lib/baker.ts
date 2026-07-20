@@ -1,4 +1,5 @@
 import type { Project, Clip } from '@/types'
+import { resolveClip } from '@/lib/keyframes'
 
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, n))
 const bell = (p: number) => 1 - Math.abs(2 * p - 1)
@@ -71,7 +72,8 @@ export class Compositor {
       .map((c, i) => ({ c, i }))
       .sort((a, b) => (a.c.layer ?? 0) - (b.c.layer ?? 0) || a.i - b.i)
       .map((o) => o.c)
-    for (const c of layers) {
+    for (const raw of layers) {
+      const c = resolveClip(raw, t)
       const el = media.get(c.id)
       if (el) this.drawMedia(ctx, el, c, cam, t)
     }
@@ -87,7 +89,7 @@ export class Compositor {
     this.drawEffects(ctx, project, t, dt)
 
     // テロップ・歌詞
-    for (const c of activeClips(project, t, ['lyrics', 'subtitle'])) this.drawTelop(ctx, c, t)
+    for (const raw of activeClips(project, t, ['lyrics', 'subtitle'])) this.drawTelop(ctx, resolveClip(raw, t), t)
 
     // トランジション（最前面）
     for (const c of activeClips(project, t, ['effect'])) if (c.transition) this.drawTransition(ctx, c, t)

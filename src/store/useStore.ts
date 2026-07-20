@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import type { Project, Track, Clip, MediaAsset, Settings, TrackType } from '@/types'
+import type { Project, Track, Clip, MediaAsset, Settings, TrackType, KeyframeValues } from '@/types'
 import { TRACK_DEFS, TRACK_COLORS } from '@/lib/catalog'
+import { resolveClip } from '@/lib/keyframes'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 
@@ -81,6 +82,9 @@ interface StoreState {
   addClipFromAsset: (assetId: string, trackType: TrackType) => void
   addSpecialClip: (partial: Partial<Clip> & { kind: TrackType; label: string }) => void
   updateClip: (id: string, patch: Partial<Clip>) => void
+  addKeyframe: (clipId: string, atLocal: number) => void
+  removeKeyframe: (clipId: string, kfId: string) => void
+  setAnimatedValue: (clipId: string, patch: Partial<import('@/types').KeyframeValues>, atLocal: number) => void
   moveClip: (id: string, start: number) => void
   removeClip: (id: string) => void
   duplicateClip: (id: string) => void
@@ -230,6 +234,74 @@ export const useStore = create<StoreState>((set, get) => ({
           if (c) Object.assign(c, patch)
         }
         return fit(p)
+      })
+    ),
+
+  addKeyframe: (clipId, atLocal) =>
+    set((s) =>
+      withHistory(s, (p) => {
+        for (const t of p.tracks) {
+          const c = t.clips.find((c) => c.id === clipId)
+          if (!c) continue
+          const time = Math.max(0, Math.min(atLocal, c.duration))
+          const values = {
+            x: c.x ?? 0, y: c.y ?? 0, scale: c.scale ?? 1, rotate: c.rotate ?? 0,
+            rotateX: c.rotateX ?? 0, rotateY: c.rotateY ?? 0, opacity: c.opacity ?? 100,
+          }
+          const kfs = c.keyframes ? [...c.keyframes] : []
+          // 同時刻があれば置き換え
+          const existing = kfs.findIndex((k) => Math.abs(k.time - time) < 0.05)
+          const kf = { id: uid(), time, values, ease: 'easeInOut' as const }
+          if (existing >= 0) kfs[existing] = kf
+          else kfs.push(kf)
+          kfs.sort((a, b) => a.time - b.time)
+          c.keyframes = kfs
+        }
+        return p
+      })
+    ),
+
+  removeKeyframe: (clipId, kfId) =>
+    set((s) =>
+      withHistory(s, (p) => {
+        for (const t of p.tracks) {
+          const c = t.clips.find((c) => c.id === clipId)
+          if (c && c.keyframes) {
+            c.keyframes = c.keyframes.filter((k) => k.id !== kfId)
+            if (c.keyframes.length === 0) delete c.keyframes
+          }
+        }
+        return p
+      })
+    ),
+
+  setAnimatedValue: (clipId, patch, atLocal) =>
+    set((s) =>
+      withHistory(s, (p) => {
+        for (const t of p.tracks) {
+          const c = t.clips.find((c) => c.id === clipId)
+          if (!c) continue
+          if (c.keyframes && c.keyframes.length > 0) {
+            // キーフレームあり → 再生ヘッド位置のキーフレームを更新/作成（自動キーフレーム）
+            const time = Math.max(0, Math.min(atLocal, c.duration))
+            const resolved = resolveClip(c, c.start + time)
+            const snapshot: KeyframeValues = {
+              x: resolved.x ?? 0, y: resolved.y ?? 0, scale: resolved.scale ?? 1, rotate: resolved.rotate ?? 0,
+              rotateX: resolved.rotateX ?? 0, rotateY: resolved.rotateY ?? 0, opacity: resolved.opacity ?? 100,
+            }
+            const values = { ...snapshot, ...patch }
+            const kfs = [...c.keyframes]
+            const idx = kfs.findIndex((k) => Math.abs(k.time - time) < 0.05)
+            if (idx >= 0) kfs[idx] = { ...kfs[idx], values }
+            else kfs.push({ id: uid(), time, values, ease: 'easeInOut' })
+            kfs.sort((a, b) => a.time - b.time)
+            c.keyframes = kfs
+          } else {
+            // キーフレーム無し → 基準値を更新
+            Object.assign(c, patch)
+          }
+        }
+        return p
       })
     ),
 
