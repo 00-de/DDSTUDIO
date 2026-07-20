@@ -19,16 +19,15 @@ function notify(assetId: string) {
 }
 
 async function analyze(src: string): Promise<number[]> {
-  // ローカルファイルはメインプロセス経由で読む（fetch は file:// で失敗するため）
+  // まず FFmpeg で確実に抽出（動画・音声どちらも対応）
+  if (window.dds?.audioPeaks) {
+    const peaks = await window.dds.audioPeaks(src, BUCKETS)
+    if (peaks && peaks.length) return peaks
+  }
+  // フォールバック：WebAudio でデコード
   let buf: ArrayBuffer | null = null
-  if (window.dds?.readFileBytes) {
-    buf = await window.dds.readFileBytes(src)
-  }
-  if (!buf) {
-    // フォールバック（dev の http など）
-    const res = await fetch(src)
-    buf = await res.arrayBuffer()
-  }
+  if (window.dds?.readFileBytes) buf = await window.dds.readFileBytes(src)
+  if (!buf) { const res = await fetch(src); buf = await res.arrayBuffer() }
   const audio = await actx().decodeAudioData(buf)
 
   const chCount = audio.numberOfChannels

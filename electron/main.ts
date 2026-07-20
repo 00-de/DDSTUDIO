@@ -307,7 +307,44 @@ ipcMain.handle('media:relink', async (_e, names: string[]) => {
   return { ok: true, folder: root, found, matched: Object.keys(found).length }
 })
 
-// ローカルファイルをバイト列で読む（波形解析用）
+// 音声波形のピークを FFmpeg で抽出（動画・音声どちらも確実・軽量）
+ipcMain.handle('audio:peaks', async (_e, opts: { path: string; buckets: number }) => {
+  const ffmpeg = resolveFfmpegPath()
+  if (!ffmpeg || !fs.existsSync(ffmpeg) || !opts.path) return null
+  const buckets = Math.max(50, Math.min(4000, opts.buckets || 800))
+
+  // モノラル 8kHz 16bit PCM で取り出す（軽い）
+  return await new Promise<number[] | null>((resolve) => {
+    const args = ['-v', 'error', '-i', opts.path, '-ac', '1', '-ar', '8000', '-f', 's16le', '-']
+    const proc = spawn(ffmpeg, args)
+    const chunks: Buffer[] = []
+    let size = 0
+    proc.stdout.on('data', (d: Buffer) => { chunks.push(d); size += d.length })
+    proc.on('error', () => resolve(null))
+    proc.on('close', (code) => {
+      if (code !== 0 || size < 2) return resolve(null)
+      const buf = Buffer.concat(chunks, size)
+      const total = Math.floor(buf.length / 2)
+      const block = Math.max(1, Math.floor(total / buckets))
+      const peaks = new Array(buckets).fill(0)
+      for (let b = 0; b < buckets; b++) {
+        let peak = 0
+        const start = b * block
+        const end = Math.min(total, start + block)
+        const step = Math.max(1, Math.floor((end - start) / 512))
+        for (let i = start; i < end; i += step) {
+          const v = Math.abs(buf.readInt16LE(i * 2)) / 32768
+          if (v > peak) peak = v
+        }
+        peaks[b] = peak
+      }
+      const max = peaks.reduce((m, v) => Math.max(m, v), 0.0001)
+      resolve(peaks.map((v) => Math.min(1, v / max)))
+    })
+  })
+})
+
+// ローカルファイルをバイト列で読む（波形解析用フォールバック）
 ipcMain.handle('file:readBytes', async (_e, filePath: string) => {
   try {
     const buf = fs.readFileSync(filePath)

@@ -246,9 +246,13 @@ function ClipView({ clip, zoom, selected, asset, laneH, onPointerDown }: {
 }) {
   const width = Math.max(clip.duration * zoom, 8)
   const isVisual = asset && (asset.kind === 'video' || asset.kind === 'image')
+  const isVideo = asset && asset.kind === 'video'
   const isAudio = asset && asset.kind === 'audio'
-  const hasSound = asset && (asset.kind === 'video' || asset.kind === 'audio')
   const innerH = Math.max(8, laneH - 8)
+  // 動画クリップは上=映像 / 下=音声レーンに分割（VEGAS 風）
+  const showSplit = isVideo && innerH >= 40
+  const audioLaneH = showSplit ? Math.max(14, Math.round(innerH * 0.34)) : 0
+  const videoH = isVisual ? innerH - audioLaneH : 0
   // クリップ幅に応じて必要なフレーム数（1枚あたり約72px）
   const frameCount = isVisual ? Math.max(1, Math.min(40, Math.ceil(width / 72))) : 0
 
@@ -274,22 +278,31 @@ function ClipView({ clip, zoom, selected, asset, laneH, onPointerDown }: {
       className={'absolute top-1 bottom-1 rounded-md overflow-hidden cursor-grab active:cursor-grabbing ' + (selected ? 'ring-2 ring-dream-violet z-10' : 'ring-1 ring-black/20')}
       style={{ left: clip.start * zoom, width, background: `linear-gradient(180deg, ${clip.color}dd, ${clip.color}99)` }}
       title={clip.label}>
-      {/* フィルムストリップ（複数フレームを横に並べる） */}
+      {/* フィルムストリップ（上部の映像ゾーン） */}
       {isVisual && frames && frames.length > 0 && (
-        <div className="absolute inset-0 flex">
+        <div className="absolute inset-x-0 top-0 flex overflow-hidden" style={{ height: showSplit ? videoH : '100%' }}>
           {Array.from({ length: frameCount }).map((_, i) => (
             <div key={i} className="h-full bg-center bg-cover shrink-0"
               style={{ width: `${100 / frameCount}%`, backgroundImage: `url(${frames[Math.min(i, frames.length - 1)]})` }} />
           ))}
         </div>
       )}
-      {isVisual && frames && frames.length > 0 && <div className="absolute inset-0 bg-black/5" />}
+      {isVisual && frames && frames.length > 0 && (
+        <div className="absolute inset-x-0 top-0" style={{ height: showSplit ? videoH : '100%', background: 'rgba(0,0,0,0.05)' }} />
+      )}
 
-      {/* 音声波形 */}
-      {hasSound && asset && (
+      {/* 動画クリップの音声レーン（VEGAS 風：下部の帯に波形） */}
+      {showSplit && asset && (
+        <div className="absolute inset-x-0 bottom-0 border-t border-black/30" style={{ height: audioLaneH, background: 'rgba(16,24,40,0.72)' }}>
+          <Waveform assetId={asset.id} src={asset.path || asset.url} kind={asset.kind}
+            width={width} height={audioLaneH} color="rgba(125,211,252,0.85)" />
+        </div>
+      )}
+
+      {/* 音声（音楽）クリップの波形 */}
+      {isAudio && asset && (
         <Waveform assetId={asset.id} src={asset.path || asset.url} kind={asset.kind}
-          width={width} height={isAudio ? innerH : Math.max(10, innerH * 0.42)}
-          color={isAudio ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)'} />
+          width={width} height={innerH} color="rgba(255,255,255,0.7)" />
       )}
 
       <div className="absolute inset-x-0 top-0 px-1.5 py-0.5 bg-black/40">

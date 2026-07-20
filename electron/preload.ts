@@ -37,6 +37,9 @@ const api = {
   readFileBytes: (filePath: string): Promise<ArrayBuffer | null> =>
     ipcRenderer.invoke('file:readBytes', filePath),
 
+  audioPeaks: (filePath: string, buckets: number): Promise<number[] | null> =>
+    ipcRenderer.invoke('audio:peaks', { path: filePath, buckets }),
+
   saveTextFile: (content: string, ext: string, filterName: string): Promise<{ ok: boolean; filePath?: string; error?: string; canceled?: boolean }> =>
     ipcRenderer.invoke('file:saveText', { content, ext, filterName }),
 
