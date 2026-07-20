@@ -194,14 +194,20 @@ function Movable({
   }
   const onUp = () => { drag.current = null }
 
+  const hasCell = (clip.cellW ?? 0) > 0 && (clip.cellH ?? 0) > 0
+  const boxSize: React.CSSProperties = hasCell
+    ? { width: `${(clip.cellW ?? 1) * 100}%`, height: `${(clip.cellH ?? 1) * 100}%` }
+    : {}
+
   return (
     <div
-      className={'absolute ' + (fill ? 'w-full h-full ' : '') + (selected ? 'cursor-move' : 'cursor-pointer')}
+      className={'absolute ' + (fill && !hasCell ? 'w-full h-full ' : '') + (selected ? 'cursor-move' : 'cursor-pointer')}
       style={{
         left: `${50 + x}%`, top: `${50 + y}%`,
         transform: `translate(-50%,-50%) rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale}) rotate(${rot}deg) scaleX(${mir})`,
         opacity: op,
-        ...(fill ? {} : { whiteSpace: 'nowrap' as const }),
+        ...boxSize,
+        ...(fill || hasCell ? {} : { whiteSpace: 'nowrap' as const }),
       }}
       onPointerDown={onBodyDown}
       onPointerMove={onMove}
@@ -287,24 +293,25 @@ function LayerMedia({ asset, clip, t, playing }: { asset: { url: string; kind: s
 
   const cx = clip.cropX ?? 0, cy = clip.cropY ?? 0, cw = clip.cropW ?? 100, ch = clip.cropH ?? 100
   const cropActive = cx > 0 || cy > 0 || cw < 100 || ch < 100
-  const cropStyle: React.CSSProperties = cropActive
+  const hasCell = (clip.cellW ?? 0) > 0 && (clip.cellH ?? 0) > 0
+  // コラージュ/PiP セル：cover でセルを埋める
+  const objectFit: React.CSSProperties['objectFit'] = hasCell ? 'cover' : cropActive ? 'fill' : 'contain'
+  const cropStyle: React.CSSProperties = cropActive && !hasCell
     ? { position: 'absolute', width: `${10000 / cw}%`, height: `${10000 / ch}%`, left: `${(-100 * cx) / cw}%`, top: `${(-100 * cy) / ch}%`, objectFit: 'fill' }
     : {}
+  const mediaClass = cropActive && !hasCell ? 'pointer-events-none' : 'w-full h-full pointer-events-none'
+  const mediaStyle = cropActive && !hasCell ? cropStyle : { objectFit }
 
   if (asset.kind === 'video') {
     return (
       <div className="absolute inset-0 overflow-hidden">
-        <video ref={vref} src={asset.url}
-          className={cropActive ? 'pointer-events-none' : 'w-full h-full object-contain pointer-events-none'}
-          style={cropStyle} />
+        <video ref={vref} src={asset.url} className={mediaClass} style={mediaStyle} />
       </div>
     )
   }
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <img src={asset.url}
-        className={cropActive ? 'pointer-events-none' : 'w-full h-full object-contain pointer-events-none'}
-        style={cropStyle} />
+      <img src={asset.url} className={mediaClass} style={mediaStyle} />
     </div>
   )
 }

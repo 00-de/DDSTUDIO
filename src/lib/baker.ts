@@ -166,11 +166,19 @@ export class Compositor {
     }
     const cx = clip.cropX ?? 0, cy = clip.cropY ?? 0, cw = clip.cropW ?? 100, ch = clip.cropH ?? 100
     const cropActive = cx > 0 || cy > 0 || cw < 100 || ch < 100
-    if (cropActive) {
-      // ソースの一部（crop 領域）をクリップ表示領域いっぱいに描画
+    const hasCell = (clip.cellW ?? 0) > 0 && (clip.cellH ?? 0) > 0
+
+    if (hasCell) {
+      // コラージュ/PiP セル：セル矩形に cover 描画
+      const cellPxW = (clip.cellW ?? 1) * w
+      const cellPxH = (clip.cellH ?? 1) * h
+      const srcA = ew / eh, cellA = cellPxW / cellPxH
+      let sx = 0, sy = 0, sw = ew, sh = eh
+      if (srcA > cellA) { sw = eh * cellA; sx = (ew - sw) / 2 } else { sh = ew / cellA; sy = (eh - sh) / 2 }
+      try { ctx.drawImage(el, sx, sy, sw, sh, -cellPxW / 2, -cellPxH / 2, cellPxW, cellPxH) } catch { /* not ready */ }
+    } else if (cropActive) {
       const sx = (cx / 100) * ew, sy = (cy / 100) * eh
       const sw = (cw / 100) * ew, sh = (ch / 100) * eh
-      // crop 後のアスペクトでフレームにフィット
       const fit = Math.min(w / sw, h / sh)
       const dwc = sw * fit, dhc = sh * fit
       try { ctx.drawImage(el, sx, sy, sw, sh, -dwc / 2, -dhc / 2, dwc, dhc) } catch { /* not ready */ }

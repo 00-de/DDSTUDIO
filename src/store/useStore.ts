@@ -64,7 +64,7 @@ interface StoreState {
   recent: RecentItem[]
   settings: Settings
   // モーダル
-  modal: null | 'settings' | 'export' | 'telop' | 'collab' | 'layout'
+  modal: null | 'settings' | 'export' | 'telop' | 'collab' | 'layout' | 'collage'
   // 共同編集
   collabOn: boolean
   collabRoom: string
@@ -96,6 +96,7 @@ interface StoreState {
   moveTrack: (id: string, dir: 'up' | 'down') => void
   moveTrackTo: (id: string, toIndex: number) => void
   addClipFromAssetAt: (assetId: string, trackId: string, start: number) => void
+  createCollage: (cells: { assetId: string; x: number; y: number; scale: number; layer: number }[], start: number, duration: number) => void
   addTelop: (text?: string) => void
   addTelopLines: (text: string, perLine?: number) => void
 
@@ -449,6 +450,42 @@ export const useStore = create<StoreState>((set, get) => ({
         return fit(p)
       })
     }),
+
+  createCollage: (cells, start, duration) =>
+    set((s) =>
+      withHistory(s, (p) => {
+        cells.forEach((cell, i) => {
+          const asset = p.assets.find((a) => a.id === cell.assetId)
+          if (!asset) return
+          const track = {
+            id: uid(),
+            type: 'video' as const,
+            name: `コラージュ ${i + 1}`,
+            clips: [] as Clip[],
+            locked: false, muted: false, hidden: false, solo: false, volume: 100,
+          }
+          const clip: Clip = {
+            id: uid(),
+            trackId: track.id,
+            assetId: asset.id,
+            label: asset.name,
+            start: Math.max(0, start),
+            duration: duration || asset.duration || (asset.kind === 'image' ? 5 : 8),
+            color: TRACK_COLORS.video,
+            kind: 'video',
+            opacity: 100,
+            volume: 100,
+            x: cell.x,
+            y: cell.y,
+            scale: cell.scale,
+            layer: cell.layer ?? i,
+          }
+          track.clips.push(clip)
+          p.tracks.push(track)
+        })
+        return fit(p)
+      })
+    ),
 
   addTelop: (text = 'テロップ') =>
     set((s) =>
