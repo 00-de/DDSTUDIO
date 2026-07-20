@@ -5,12 +5,15 @@ export default function ModalShell({
   onClose,
   children,
   wide,
+  size,
 }: {
   title: string
   onClose: () => void
   children: React.ReactNode
   wide?: boolean
+  size?: 'xl'
 }) {
+  const widthClass = size === 'xl' ? 'w-[min(1120px,95vw)]' : wide ? 'w-[560px]' : 'w-[440px]'
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
@@ -20,7 +23,7 @@ export default function ModalShell({
       onMouseDown={onClose}
     >
       <motion.div
-        className={'bg-stage-850 border border-stage-700 rounded-2xl shadow-2xl p-6 ' + (wide ? 'w-[560px]' : 'w-[440px]')}
+        className={'bg-stage-850 border border-stage-700 rounded-2xl shadow-2xl p-6 ' + widthClass}
         initial={{ scale: 0.94, y: 12 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.94, y: 12 }}

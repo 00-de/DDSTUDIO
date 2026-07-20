@@ -62,6 +62,11 @@ export interface Clip {
   cropY?: number // 上端 %（0〜100）
   cropW?: number // 幅 %（0〜100、既定100）
   cropH?: number // 高さ %（0〜100、既定100）
+  // 枠飾り（PiP/コラージュ用）
+  borderWidth?: number // px
+  borderColor?: string
+  borderRadius?: number // px
+  frameShadow?: boolean
   // コラージュ/PiP のセル（枠）。指定時はこのセル内に cover 表示される（frame比 0〜1）
   cellW?: number
   cellH?: number

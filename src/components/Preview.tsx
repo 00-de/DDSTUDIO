@@ -214,6 +214,13 @@ function Movable({
       onPointerUp={onUp}
     >
       {children}
+      {(clip.borderWidth || clip.borderRadius || clip.frameShadow) && (
+        <div className="absolute inset-0 pointer-events-none" style={{
+          border: clip.borderWidth ? `${clip.borderWidth}px solid ${clip.borderColor ?? '#ffffff'}` : undefined,
+          borderRadius: clip.borderRadius ? `${clip.borderRadius}px` : undefined,
+          boxShadow: clip.frameShadow ? '0 8px 30px rgba(0,0,0,0.55)' : undefined,
+        }} />
+      )}
       {selected && (
         <>
           <div className="absolute inset-0 ring-2 ring-dream-cyan pointer-events-none rounded-sm" />

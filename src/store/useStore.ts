@@ -96,7 +96,7 @@ interface StoreState {
   moveTrack: (id: string, dir: 'up' | 'down') => void
   moveTrackTo: (id: string, toIndex: number) => void
   addClipFromAssetAt: (assetId: string, trackId: string, start: number) => void
-  createCollage: (cells: { assetId: string; x: number; y: number; scale: number; layer: number }[], start: number, duration: number) => void
+  createCollage: (cells: { assetId: string; x: number; y: number; scale: number; layer: number; borderWidth?: number; borderColor?: string; borderRadius?: number; frameShadow?: boolean }[], start: number, duration: number) => void
   addTelop: (text?: string) => void
   addTelopLines: (text: string, perLine?: number) => void
 
@@ -479,6 +479,10 @@ export const useStore = create<StoreState>((set, get) => ({
             y: cell.y,
             scale: cell.scale,
             layer: cell.layer ?? i,
+            borderWidth: cell.borderWidth,
+            borderColor: cell.borderColor,
+            borderRadius: cell.borderRadius,
+            frameShadow: cell.frameShadow,
           }
           track.clips.push(clip)
           p.tracks.push(track)
