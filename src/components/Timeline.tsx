@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { TRACK_COLORS, TRACK_DEFS } from '@/lib/catalog'
 import { getStrip } from '@/lib/thumbs'
+import Waveform from '@/components/Waveform'
 import type { Clip, Track, TrackType } from '@/types'
 
 const HEADER_W = 164
@@ -208,7 +209,7 @@ export default function Timeline() {
                 }}
                 onClick={(e) => { if (e.target === e.currentTarget) seek(e) }}>
                 {tr.clips.map((c) => (
-                  <ClipView key={c.id} clip={c} zoom={zoom} selected={c.id === selectedClipId}
+                  <ClipView key={c.id} clip={c} zoom={zoom} selected={c.id === selectedClipId} laneH={h}
                     asset={c.assetId ? project.assets.find((a) => a.id === c.assetId) : undefined}
                     onPointerDown={(e) => onClipPointerDown(e, c)} />
                 ))}
@@ -238,22 +239,25 @@ export default function Timeline() {
   )
 }
 
-function ClipView({ clip, zoom, selected, asset, onPointerDown }: {
-  clip: Clip; zoom: number; selected: boolean
+function ClipView({ clip, zoom, selected, asset, laneH, onPointerDown }: {
+  clip: Clip; zoom: number; selected: boolean; laneH: number
   asset?: { id: string; url: string; kind: string; name: string }
   onPointerDown: (e: React.PointerEvent) => void
 }) {
   const width = Math.max(clip.duration * zoom, 8)
-  const isMedia = asset && (asset.kind === 'video' || asset.kind === 'image')
+  const isVisual = asset && (asset.kind === 'video' || asset.kind === 'image')
+  const isAudio = asset && asset.kind === 'audio'
+  const hasSound = asset && (asset.kind === 'video' || asset.kind === 'audio')
+  const innerH = Math.max(8, laneH - 8)
   // クリップ幅に応じて必要なフレーム数（1枚あたり約72px）
-  const frameCount = isMedia ? Math.max(1, Math.min(40, Math.ceil(width / 72))) : 0
+  const frameCount = isVisual ? Math.max(1, Math.min(40, Math.ceil(width / 72))) : 0
 
   const [frames, setFrames] = useState<string[] | null>(
-    () => (isMedia && asset ? getStrip(asset.id, asset.url, asset.kind, frameCount) : null)
+    () => (isVisual && asset ? getStrip(asset.id, asset.url, asset.kind, frameCount) : null)
   )
 
   useEffect(() => {
-    if (!isMedia || !asset) return
+    if (!isVisual || !asset) return
     const got = getStrip(asset.id, asset.url, asset.kind, frameCount)
     if (got) { setFrames(got); return }
     setFrames(null)
@@ -263,7 +267,7 @@ function ClipView({ clip, zoom, selected, asset, onPointerDown }: {
     }
     window.addEventListener('dds-thumb-ready', onReady)
     return () => window.removeEventListener('dds-thumb-ready', onReady)
-  }, [asset?.id, frameCount, isMedia])
+  }, [asset?.id, frameCount, isVisual])
 
   return (
     <div onPointerDown={onPointerDown}
@@ -271,7 +275,7 @@ function ClipView({ clip, zoom, selected, asset, onPointerDown }: {
       style={{ left: clip.start * zoom, width, background: `linear-gradient(180deg, ${clip.color}dd, ${clip.color}99)` }}
       title={clip.label}>
       {/* フィルムストリップ（複数フレームを横に並べる） */}
-      {isMedia && frames && frames.length > 0 && (
+      {isVisual && frames && frames.length > 0 && (
         <div className="absolute inset-0 flex">
           {Array.from({ length: frameCount }).map((_, i) => (
             <div key={i} className="h-full bg-center bg-cover shrink-0"
@@ -279,7 +283,15 @@ function ClipView({ clip, zoom, selected, asset, onPointerDown }: {
           ))}
         </div>
       )}
-      {isMedia && frames && frames.length > 0 && <div className="absolute inset-0 bg-black/5" />}
+      {isVisual && frames && frames.length > 0 && <div className="absolute inset-0 bg-black/5" />}
+
+      {/* 音声波形 */}
+      {hasSound && asset && (
+        <Waveform assetId={asset.id} url={asset.url} kind={asset.kind}
+          width={width} height={isAudio ? innerH : Math.max(10, innerH * 0.42)}
+          color={isAudio ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)'} />
+      )}
+
       <div className="absolute inset-x-0 top-0 px-1.5 py-0.5 bg-black/40">
         <span className="text-[10px] font-medium text-white truncate block drop-shadow">{clip.label}</span>
       </div>
