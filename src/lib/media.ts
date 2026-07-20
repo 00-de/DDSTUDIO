@@ -1,8 +1,10 @@
 import type { MediaKind } from '@/types'
 
 export function kindFromExt(ext: string): MediaKind {
-  if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) return 'video'
-  if (['mp3', 'wav', 'aac', 'flac'].includes(ext)) return 'audio'
+  const e = ext.toLowerCase().replace(/^\./, '')
+  if (['mp4', 'mov', 'avi', 'webm', 'mkv', 'm4v', 'wmv', 'flv', 'mpg', 'mpeg', 'ts', '3gp'].includes(e)) return 'video'
+  if (['mp3', 'wav', 'aac', 'flac', 'm4a', 'ogg', 'opus', 'wma', 'aiff', 'aif'].includes(e)) return 'audio'
+  // 画像（.jfif など JPEG 派生も含む）
   return 'image'
 }
 

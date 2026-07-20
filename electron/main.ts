@@ -148,10 +148,10 @@ ipcMain.handle('dialog:importMedia', async () => {
     title: '素材を読み込む',
     properties: ['openFile', 'multiSelections'],
     filters: [
-      { name: 'すべての素材', extensions: ['mp4', 'mov', 'avi', 'webm', 'gif', 'png', 'jpg', 'jpeg', 'svg', 'mp3', 'wav', 'aac', 'flac'] },
-      { name: '動画', extensions: ['mp4', 'mov', 'avi', 'webm'] },
-      { name: '画像', extensions: ['png', 'jpg', 'jpeg', 'gif', 'svg'] },
-      { name: '音声', extensions: ['mp3', 'wav', 'aac', 'flac'] },
+      { name: 'すべての素材', extensions: ['mp4', 'mov', 'avi', 'webm', 'mkv', 'm4v', 'wmv', 'gif', 'png', 'jpg', 'jpeg', 'jfif', 'webp', 'bmp', 'svg', 'mp3', 'wav', 'aac', 'flac', 'm4a', 'ogg'] },
+      { name: '動画', extensions: ['mp4', 'mov', 'avi', 'webm', 'mkv', 'm4v', 'wmv', 'flv', 'mpg', 'mpeg'] },
+      { name: '画像', extensions: ['png', 'jpg', 'jpeg', 'jfif', 'webp', 'bmp', 'gif', 'svg'] },
+      { name: '音声', extensions: ['mp3', 'wav', 'aac', 'flac', 'm4a', 'ogg', 'opus'] },
     ],
   })
   if (res.canceled) return []
