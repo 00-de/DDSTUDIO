@@ -94,6 +94,8 @@ interface StoreState {
   addTrack: (type: TrackType) => void
   removeTrack: (id: string) => void
   moveTrack: (id: string, dir: 'up' | 'down') => void
+  moveTrackTo: (id: string, toIndex: number) => void
+  addClipFromAssetAt: (assetId: string, trackId: string, start: number) => void
   addTelop: (text?: string) => void
   addTelopLines: (text: string, perLine?: number) => void
 
@@ -405,6 +407,46 @@ export const useStore = create<StoreState>((set, get) => ({
       const arr = project.tracks
       ;[arr[i], arr[j]] = [arr[j], arr[i]]
       return { project, dirty: true }
+    }),
+
+  moveTrackTo: (id, toIndex) =>
+    set((s) => {
+      const project = JSON.parse(JSON.stringify(s.project)) as Project
+      const from = project.tracks.findIndex((t) => t.id === id)
+      if (from < 0) return {}
+      const to = Math.max(0, Math.min(project.tracks.length - 1, toIndex))
+      if (from === to) return {}
+      const [moved] = project.tracks.splice(from, 1)
+      project.tracks.splice(to, 0, moved)
+      return {
+        past: [...s.past.slice(-49), JSON.parse(JSON.stringify(s.project))],
+        future: [],
+        project,
+        dirty: true,
+      }
+    }),
+
+  addClipFromAssetAt: (assetId, trackId, start) =>
+    set((s) => {
+      const asset = s.project.assets.find((a) => a.id === assetId)
+      if (!asset) return {}
+      return withHistory(s, (p) => {
+        const track = p.tracks.find((t) => t.id === trackId) || p.tracks[0]
+        const clip: Clip = {
+          id: uid(),
+          trackId: track.id,
+          assetId: asset.id,
+          label: asset.name,
+          start: Math.max(0, start),
+          duration: asset.duration ?? (asset.kind === 'image' ? 5 : 8),
+          color: TRACK_COLORS[track.type],
+          kind: track.type,
+          opacity: 100,
+          volume: 100,
+        }
+        track.clips.push(clip)
+        return fit(p)
+      })
     }),
 
   addTelop: (text = 'テロップ') =>

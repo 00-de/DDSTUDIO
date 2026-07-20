@@ -14,12 +14,14 @@ export default function Timeline() {
   const currentTime = useStore((s) => s.currentTime)
   const selectedClipId = useStore((s) => s.selectedClipId)
   const peers = useStore((s) => s.peers)
-  const { setCurrentTime, selectClip, moveClip, setZoom, updateTrack, addTrack, removeTrack, moveTrack } = useStore()
+  const { setCurrentTime, selectClip, moveClip, setZoom, updateTrack, addTrack, removeTrack, moveTrack, moveTrackTo, addClipFromAssetAt } = useStore()
   const scrollRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ id: string; grabDx: number } | null>(null)
   const resizeRef = useRef<{ id: string; startY: number; startH: number } | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [, force] = useState(0)
+  const [dragTrack, setDragTrack] = useState<string | null>(null)
+  const [dropTrack, setDropTrack] = useState<string | null>(null)
 
   const totalWidth = Math.max(project.durationSec * zoom, 400)
 
@@ -139,10 +141,25 @@ export default function Timeline() {
             return (
             <div key={tr.id} className="flex" style={{ height: h }}>
               {/* 見出し（左固定・VEGAS 風） */}
-              <div className="sticky left-0 z-20 bg-stage-900 border-b border-r border-stage-800/60 flex shrink-0 relative group" style={{ width: HEADER_W }}>
+              <div
+                className={'sticky left-0 z-20 bg-stage-900 border-r border-stage-800/60 flex shrink-0 relative group ' + (dropTrack === tr.id ? 'border-t-2 border-t-dream-violet' : 'border-b')}
+                style={{ width: HEADER_W }}
+                onDragOver={(e) => { if (dragTrack && dragTrack !== tr.id) { e.preventDefault(); setDropTrack(tr.id) } }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (dragTrack) { const to = project.tracks.findIndex((x) => x.id === tr.id); moveTrackTo(dragTrack, to) }
+                  setDragTrack(null); setDropTrack(null)
+                }}
+              >
                 <div className="w-1 shrink-0" style={{ background: TRACK_COLORS[tr.type] }} />
-                {/* 並び替え + 番号 */}
-                <div className="flex flex-col items-center justify-center px-0.5 shrink-0">
+                {/* 並び替え + 番号（ドラッグでも並び替え可） */}
+                <div
+                  className="flex flex-col items-center justify-center px-0.5 shrink-0 cursor-grab active:cursor-grabbing"
+                  draggable
+                  onDragStart={(e) => { setDragTrack(tr.id); e.dataTransfer.effectAllowed = 'move' }}
+                  onDragEnd={() => { setDragTrack(null); setDropTrack(null) }}
+                  title="ドラッグで並び替え"
+                >
                   <button title="上へ" onClick={() => moveTrack(tr.id, 'up')} disabled={idx === 0}
                     className="text-[8px] leading-none text-stage-600 hover:text-dream-violet disabled:opacity-20">▲</button>
                   <span className="text-[10px] font-bold text-slate-500 leading-tight">{idx + 1}</span>
@@ -180,6 +197,15 @@ export default function Timeline() {
               {/* レーン */}
               <div className="relative border-b border-stage-800/60" style={{ width: totalWidth }}
                 onPointerMove={onClipPointerMove} onPointerUp={onClipPointerUp}
+                onDragOver={(e) => { if (e.dataTransfer.types.includes('dds/asset')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' } }}
+                onDrop={(e) => {
+                  const id = e.dataTransfer.getData('dds/asset')
+                  if (!id) return
+                  e.preventDefault()
+                  const r = e.currentTarget.getBoundingClientRect()
+                  const start = Math.max(0, (e.clientX - r.left) / zoom)
+                  addClipFromAssetAt(id, tr.id, start)
+                }}
                 onClick={(e) => { if (e.target === e.currentTarget) seek(e) }}>
                 {tr.clips.map((c) => (
                   <ClipView key={c.id} clip={c} zoom={zoom} selected={c.id === selectedClipId}

@@ -95,6 +95,11 @@ export default function MaterialPanel() {
                     key={a.id}
                     className="group rounded-lg overflow-hidden bg-stage-850 border border-stage-800 hover:border-dream-violet cursor-pointer"
                     onClick={() => addClipFromAsset(a.id, a.kind === 'audio' ? 'audio' : a.kind === 'image' ? 'image' : 'video')}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('dds/asset', a.id)
+                      e.dataTransfer.effectAllowed = 'copy'
+                    }}
                     title={`${a.name}\nクリックでタイムラインへ追加`}
                   >
                     <div className="aspect-video bg-stage-950 flex items-center justify-center overflow-hidden">
