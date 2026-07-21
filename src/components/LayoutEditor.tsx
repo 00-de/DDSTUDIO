@@ -104,6 +104,7 @@ export default function LayoutEditor() {
               <NumRow label="回転(Z)" value={Math.round(sel.rotate ?? 0)} onChange={(v) => animSet(sel, { rotate: v })} />
               <SliderRow label={`3D傾きX (${sel.rotateX ?? 0}°)`} min={-70} max={70} value={sel.rotateX ?? 0} onChange={(v) => animSet(sel, { rotateX: v })} />
               <SliderRow label={`3D傾きY (${sel.rotateY ?? 0}°)`} min={-70} max={70} value={sel.rotateY ?? 0} onChange={(v) => animSet(sel, { rotateY: v })} />
+              <SliderRow label={`奥行き (${sel.z ?? 0}) 奥←→手前`} min={-900} max={600} value={sel.z ?? 0} onChange={(v) => animSet(sel, { z: v })} />
               <SliderRow label={`不透明度 (${sel.opacity ?? 100}%)`} min={0} max={100} value={sel.opacity ?? 100} onChange={(v) => animSet(sel, { opacity: v })} />
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-stage-600">重なり</span>
@@ -169,6 +170,7 @@ function EditableLayer({
   const x = clip.x ?? 0, y = clip.y ?? 0, scale = clip.scale ?? 1
   const rot = clip.rotate ?? 0, mir = clip.mirror ? -1 : 1
   const rx = clip.rotateX ?? 0, ry = clip.rotateY ?? 0
+  const zz = Math.max(-900, Math.min(600, clip.z ?? 0))
   const op = (clip.opacity ?? 100) / 100
 
   const rect = () => stageRef.current?.getBoundingClientRect()
@@ -223,7 +225,7 @@ function EditableLayer({
       className={'absolute w-full h-full ' + (selected ? 'cursor-move' : 'cursor-pointer')}
       style={{
         left: `${50 + x}%`, top: `${50 + y}%`,
-        transform: `translate(-50%,-50%) rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale}) rotate(${rot}deg) scaleX(${mir})`,
+        transform: `translate(-50%,-50%) translateZ(${zz}px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale}) rotate(${rot}deg) scaleX(${mir})`,
         opacity: op,
       }}
       onPointerDown={(e) => startDrag(e, 'move')}

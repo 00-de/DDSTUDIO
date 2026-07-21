@@ -1,6 +1,6 @@
 import type { Clip, KeyframeValues } from '@/types'
 
-const PROPS: (keyof KeyframeValues)[] = ['x', 'y', 'scale', 'rotate', 'rotateX', 'rotateY', 'opacity', 'cropX', 'cropY', 'cropW', 'cropH']
+const PROPS: (keyof KeyframeValues)[] = ['x', 'y', 'scale', 'rotate', 'rotateX', 'rotateY', 'z', 'opacity', 'cropX', 'cropY', 'cropW', 'cropH']
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 
@@ -13,6 +13,7 @@ function baseValue(clip: Clip, p: keyof KeyframeValues): number {
     case 'rotate': return clip.rotate ?? 0
     case 'rotateX': return clip.rotateX ?? 0
     case 'rotateY': return clip.rotateY ?? 0
+    case 'z': return clip.z ?? 0
     case 'opacity': return clip.opacity ?? 100
     case 'cropX': return clip.cropX ?? 0
     case 'cropY': return clip.cropY ?? 0
@@ -62,6 +63,7 @@ export function snapshotValues(clip: Clip): KeyframeValues {
     rotate: clip.rotate ?? 0,
     rotateX: clip.rotateX ?? 0,
     rotateY: clip.rotateY ?? 0,
+    z: clip.z ?? 0,
     opacity: clip.opacity ?? 100,
     cropX: clip.cropX ?? 0,
     cropY: clip.cropY ?? 0,

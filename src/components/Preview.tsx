@@ -4,6 +4,7 @@ import type { Clip } from '@/types'
 import EffectsCanvas from '@/components/EffectsCanvas'
 import TransitionOverlay, { cameraStyle } from '@/components/TransitionOverlay'
 import { resolveClip } from '@/lib/keyframes'
+import { cssFilter, glowShadow } from '@/lib/filters'
 
 // 背景ラベル → CSS
 export function bgStyle(label?: string): React.CSSProperties {
@@ -155,6 +156,7 @@ function Movable({
   const x = clip.x ?? 0, y = clip.y ?? 0, scale = clip.scale ?? 1
   const rot = clip.rotate ?? 0, mir = clip.mirror ? -1 : 1
   const rx = clip.rotateX ?? 0, ry = clip.rotateY ?? 0
+  const zz = clip.z ?? 0
   const op = clipOpacity(clip, t)
 
   const pctFromEvent = (clientX: number, clientY: number) => {
@@ -204,7 +206,7 @@ function Movable({
       className={'absolute ' + (fill && !hasCell ? 'w-full h-full ' : '') + (selected ? 'cursor-move' : 'cursor-pointer')}
       style={{
         left: `${50 + x}%`, top: `${50 + y}%`,
-        transform: `translate(-50%,-50%) rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale}) rotate(${rot}deg) scaleX(${mir})`,
+        transform: `translate(-50%,-50%) translateZ(${Math.max(-900, Math.min(600, zz))}px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale}) rotate(${rot}deg) scaleX(${mir})`,
         opacity: op,
         ...boxSize,
         ...(fill || hasCell ? {} : { whiteSpace: 'nowrap' as const }),
@@ -307,18 +309,28 @@ function LayerMedia({ asset, clip, t, playing }: { asset: { url: string; kind: s
     ? { position: 'absolute', width: `${10000 / cw}%`, height: `${10000 / ch}%`, left: `${(-100 * cx) / cw}%`, top: `${(-100 * cy) / ch}%`, objectFit: 'fill' }
     : {}
   const mediaClass = cropActive && !hasCell ? 'pointer-events-none' : 'w-full h-full pointer-events-none'
-  const mediaStyle = cropActive && !hasCell ? cropStyle : { objectFit }
+  const filterStr = [cssFilter(clip.fx), glowShadow(clip.fx)].filter(Boolean).join(' ')
+  const baseStyle: React.CSSProperties = cropActive && !hasCell ? cropStyle : { objectFit }
+  const mediaStyle: React.CSSProperties = { ...baseStyle, filter: filterStr || undefined }
+  const tintOverlay = clip.fx?.tint && clip.fx.tintAmount
+    ? <div className="absolute inset-0 pointer-events-none mix-blend-overlay" style={{ background: clip.fx.tint, opacity: (clip.fx.tintAmount ?? 0) / 100 }} />
+    : null
+  const vignetteOverlay = clip.fx?.vignette
+    ? <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at center, transparent ${100 - (clip.fx.vignette ?? 0) * 0.7}%, rgba(0,0,0,${(clip.fx.vignette ?? 0) / 100}) 100%)` }} />
+    : null
 
   if (asset.kind === 'video') {
     return (
       <div className="absolute inset-0 overflow-hidden">
         <video ref={vref} src={asset.url} className={mediaClass} style={mediaStyle} />
+        {tintOverlay}{vignetteOverlay}
       </div>
     )
   }
   return (
     <div className="absolute inset-0 overflow-hidden">
       <img src={asset.url} className={mediaClass} style={mediaStyle} />
+      {tintOverlay}{vignetteOverlay}
     </div>
   )
 }

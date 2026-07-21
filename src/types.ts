@@ -56,6 +56,7 @@ export interface Clip {
   scale?: number // 拡大率 0.1〜4
   rotateX?: number // 3D 傾き（X軸）度
   rotateY?: number // 3D 傾き（Y軸）度
+  z?: number // 奥行き -900(奥)〜600(手前) px相当
   layer?: number // 重なり順（大きいほど前面）
   // Pan/Crop（素材の一部を切り出して表示）0〜100 の%。crop で囲った領域が画面いっぱいに表示される
   cropX?: number // 左端 %（0〜100）
@@ -67,6 +68,22 @@ export interface Clip {
   borderColor?: string
   borderRadius?: number // px
   frameShadow?: boolean
+  // 色補正・光フィルター
+  fx?: {
+    brightness?: number  // 明るさ 0〜200（既定100）
+    contrast?: number    // コントラスト 0〜200（既定100）
+    saturate?: number    // 彩度 0〜300（既定100）
+    hue?: number         // 色相回転 0〜360
+    sepia?: number       // セピア 0〜100
+    grayscale?: number   // 白黒 0〜100
+    invert?: number      // 反転 0〜100
+    blur?: number        // ぼかし px 0〜30
+    glow?: number        // グロー(発光) 0〜100
+    glowColor?: string   // グロー色
+    vignette?: number    // 周辺減光 0〜100
+    tint?: string        // 色被せ
+    tintAmount?: number  // 色被せ量 0〜100
+  }
   // コラージュ/PiP のセル（枠）。指定時はこのセル内に cover 表示される（frame比 0〜1）
   cellW?: number
   cellH?: number
@@ -86,6 +103,7 @@ export interface KeyframeValues {
   rotate?: number
   rotateX?: number
   rotateY?: number
+  z?: number
   opacity?: number
   cropX?: number
   cropY?: number

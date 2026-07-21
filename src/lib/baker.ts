@@ -1,5 +1,6 @@
 import type { Project, Clip } from '@/types'
 import { resolveClip } from '@/lib/keyframes'
+import { cssFilter } from '@/lib/filters'
 
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, n))
 const bell = (p: number) => 1 - Math.abs(2 * p - 1)
@@ -151,9 +152,17 @@ export class Compositor {
 
     ctx.save()
     ctx.globalAlpha = clamp(clipOpacity(clip, t), 0, 1)
+    const cf = cssFilter(clip.fx)
+    if (cf) ctx.filter = cf
     ctx.translate(w / 2, h / 2)
     this.applyCamera(ctx, cam, t)
     ctx.translate((clip.x ?? 0) / 100 * w, (clip.y ?? 0) / 100 * h)
+    // 奥行き（プレビューの perspective:1200px と同じ縮尺）
+    const zz = Math.max(-900, Math.min(600, clip.z ?? 0))
+    if (zz) {
+      const pf = 1200 / (1200 - zz)
+      ctx.scale(pf, pf)
+    }
     const sc = clip.scale ?? 1
     ctx.scale(sc * (clip.mirror ? -1 : 1), sc)
     ctx.rotate((clip.rotate ?? 0) * Math.PI / 180)

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { EFFECTS, BACKGROUNDS, TRANSITIONS, CAMERA_MOVES } from '@/lib/catalog'
 import type { Clip } from '@/types'
+import { presetsByGroup, hasFx, type FxPreset } from '@/lib/filters'
+import { ANIM_PRESETS, applyAnimPreset } from '@/lib/animPresets'
 
 export default function PropertiesPanel() {
   const [tab, setTab] = useState<'props' | 'effects' | 'stage'>('props')
@@ -70,6 +72,7 @@ function Props() {
   const aset = (p: Partial<Clip>) => setAnimatedValue(clip.id, p as never, currentTime - clip.start)
   const hasKf = (clip.keyframes?.length ?? 0) > 0
   const kfActive = currentTime >= clip.start && currentTime < clip.start + clip.duration
+  const [animDur, setAnimDur] = useState(0.8)
   const isText = clip.kind === 'lyrics' || clip.kind === 'subtitle'
   const isVideo = clip.kind === 'video'
   const isImage = clip.kind === 'image'
@@ -174,6 +177,9 @@ function Props() {
           <Field label={`3D 傾き Y (${clip.rotateY ?? 0}°)`}>
             <input type="range" min="-70" max="70" className="w-full accent-dream-violet" value={clip.rotateY ?? 0} onChange={(e) => aset({ rotateY: Number(e.target.value) })} />
           </Field>
+          <Field label={`奥行き (${clip.z ?? 0}) 奥←→手前`}>
+            <input type="range" min="-900" max="600" step="10" className="w-full accent-dream-violet" value={clip.z ?? 0} onChange={(e) => aset({ z: Number(e.target.value) })} />
+          </Field>
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-stage-600">重なり順</span>
             <input type="number" className="dds-input w-16" value={clip.layer ?? 0} onChange={(e) => patch({ layer: Number(e.target.value) })} />
@@ -251,6 +257,40 @@ function Props() {
       {(hasVisual || isText) && (
         <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
           <div className="flex items-center justify-between">
+            <span className="text-[11px] text-dream-violet font-semibold tracking-wider">かんたんアニメ（登場・退場）</span>
+            <select className="dds-select text-[10px] py-0.5" value={animDur} onChange={(e) => setAnimDur(Number(e.target.value))}>
+              <option value={0.4}>速い</option>
+              <option value={0.8}>普通</option>
+              <option value={1.5}>ゆっくり</option>
+            </select>
+          </div>
+          <div className="text-[10px] text-stage-600">登場</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {ANIM_PRESETS.filter((p) => p.group === '登場').map((p) => (
+              <button key={p.id}
+                onClick={() => patch({ keyframes: applyAnimPreset(clip, p.id, animDur) })}
+                className="text-[10px] px-1 py-1 rounded border border-stage-700 hover:border-dream-violet truncate">
+                {p.name}
+              </button>
+            ))}
+          </div>
+          <div className="text-[10px] text-stage-600">退場</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {ANIM_PRESETS.filter((p) => p.group === '退場').map((p) => (
+              <button key={p.id}
+                onClick={() => patch({ keyframes: applyAnimPreset(clip, p.id, animDur) })}
+                className="text-[10px] px-1 py-1 rounded border border-stage-700 hover:border-dream-violet truncate">
+                {p.name}
+              </button>
+            ))}
+          </div>
+          <div className="text-[10px] text-stage-600">押すとキーフレームが自動で入ります（登場＋退場の組み合わせも可）。下のキーフレーム欄で確認・削除できます。</div>
+        </div>
+      )}
+
+      {(hasVisual || isText) && (
+        <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
+          <div className="flex items-center justify-between">
             <span className="text-[11px] text-dream-violet font-semibold tracking-wider">キーフレーム（アニメ）</span>
             <button
               onClick={() => addKeyframe(clip.id, currentTime - clip.start)}
@@ -305,21 +345,99 @@ function Props() {
 
 function Effects() {
   const addSpecialClip = useStore((s) => s.addSpecialClip)
+  const selectedId = useStore((s) => s.selectedClipId)
+  const project = useStore((s) => s.project)
+  const updateClip = useStore((s) => s.updateClip)
+
+  let clip: Clip | undefined
+  for (const tr of project.tracks) { const c = tr.clips.find((c) => c.id === selectedId); if (c) { clip = c; break } }
+  const isVisual = clip && (clip.kind === 'video' || clip.kind === 'image')
+  const groups = presetsByGroup()
+  const fx = clip?.fx ?? {}
+  const setFx = (patch: Partial<NonNullable<Clip['fx']>>) => { if (clip) updateClip(clip.id, { fx: { ...fx, ...patch } }) }
+  const applyPreset = (p: FxPreset) => { if (clip) updateClip(clip.id, { fx: { ...p.fx } }) }
+
   return (
-    <div className="p-3">
-      <div className="text-[11px] text-stage-600 mb-2">クリックで再生ヘッド位置に追加</div>
-      <div className="grid grid-cols-2 gap-2">
-        {EFFECTS.map((e) => (
-          <button
-            key={e.id}
-            onClick={() => addSpecialClip({ kind: 'effect', label: e.name, effectId: e.id, color: e.color, duration: 3 })}
-            className="flex items-center gap-2 rounded-lg border border-stage-800 bg-stage-850 hover:border-dream-violet transition-colors p-2"
-          >
-            <span className="text-lg">{e.icon}</span>
-            <span className="text-xs truncate">{e.name}</span>
-          </button>
-        ))}
+    <div className="p-3 space-y-4">
+      {/* 色補正・光フィルター（選択クリップに適用） */}
+      {isVisual ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-dream-violet font-semibold tracking-wider">色補正・光フィルター</span>
+            {hasFx(fx) && <button onClick={() => clip && updateClip(clip.id, { fx: {} })} className="text-[10px] text-stage-600 hover:text-red-500">解除</button>}
+          </div>
+          {Object.entries(groups).map(([group, presets]) => (
+            <div key={group}>
+              <div className="text-[10px] text-stage-600 mb-1">{group}</div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {presets.map((p) => (
+                  <button key={p.id} onClick={() => applyPreset(p)}
+                    className="text-[10px] px-1.5 py-1 rounded border border-stage-700 hover:border-dream-violet truncate">
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <details className="border-t border-stage-800 pt-2">
+            <summary className="text-[11px] text-stage-600 cursor-pointer hover:text-dream-violet">手動で微調整</summary>
+            <div className="space-y-1.5 mt-2">
+              <FxSlider label="明るさ" v={fx.brightness ?? 100} min={0} max={200} def={100} on={(v) => setFx({ brightness: v })} />
+              <FxSlider label="コントラスト" v={fx.contrast ?? 100} min={0} max={200} def={100} on={(v) => setFx({ contrast: v })} />
+              <FxSlider label="彩度" v={fx.saturate ?? 100} min={0} max={300} def={100} on={(v) => setFx({ saturate: v })} />
+              <FxSlider label="色相" v={fx.hue ?? 0} min={0} max={360} def={0} on={(v) => setFx({ hue: v })} />
+              <FxSlider label="セピア" v={fx.sepia ?? 0} min={0} max={100} def={0} on={(v) => setFx({ sepia: v })} />
+              <FxSlider label="白黒" v={fx.grayscale ?? 0} min={0} max={100} def={0} on={(v) => setFx({ grayscale: v })} />
+              <FxSlider label="ぼかし" v={fx.blur ?? 0} min={0} max={30} def={0} on={(v) => setFx({ blur: v })} />
+              <FxSlider label="グロー(発光)" v={fx.glow ?? 0} min={0} max={100} def={0} on={(v) => setFx({ glow: v })} />
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-stage-600 flex-1">グロー色</span>
+                <input type="color" value={fx.glowColor ?? '#ffffff'} onChange={(e) => setFx({ glowColor: e.target.value })} className="w-7 h-6 rounded bg-white border border-stage-700" />
+              </div>
+              <FxSlider label="周辺減光" v={fx.vignette ?? 0} min={0} max={100} def={0} on={(v) => setFx({ vignette: v })} />
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-stage-600 flex-1">色被せ</span>
+                <input type="color" value={fx.tint ?? '#ffffff'} onChange={(e) => setFx({ tint: e.target.value })} className="w-7 h-6 rounded bg-white border border-stage-700" />
+              </div>
+              <FxSlider label="色被せ量" v={fx.tintAmount ?? 0} min={0} max={100} def={0} on={(v) => setFx({ tintAmount: v })} />
+            </div>
+          </details>
+        </div>
+      ) : (
+        <div className="text-[11px] text-stage-600 rounded-lg border border-dashed border-stage-700 p-3 text-center">
+          動画・画像クリップを選ぶと、色補正・光フィルターをかけられます。
+        </div>
+      )}
+
+      {/* パーティクル演出（クリップとして追加） */}
+      <div className="border-t border-stage-800 pt-3">
+        <div className="text-[11px] text-stage-600 mb-2">粒子エフェクト（再生ヘッド位置に追加）</div>
+        <div className="grid grid-cols-2 gap-2">
+          {EFFECTS.map((e) => (
+            <button
+              key={e.id}
+              onClick={() => addSpecialClip({ kind: 'effect', label: e.name, effectId: e.id, color: e.color, duration: 3 })}
+              className="flex items-center gap-2 rounded-lg border border-stage-800 bg-stage-850 hover:border-dream-violet transition-colors p-2"
+            >
+              <span className="text-lg">{e.icon}</span>
+              <span className="text-xs truncate">{e.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
+    </div>
+  )
+}
+
+function FxSlider({ label, v, min, max, def, on }: { label: string; v: number; min: number; max: number; def: number; on: (v: number) => void }) {
+  return (
+    <div>
+      <div className="flex justify-between text-[10px] text-stage-600">
+        <span>{label}</span>
+        <button onClick={() => on(def)} className={'tabular-nums ' + (v !== def ? 'text-dream-violet' : '')}>{v}</button>
+      </div>
+      <input type="range" min={min} max={max} value={v} onChange={(e) => on(Number(e.target.value))} className="w-full accent-dream-violet" />
     </div>
   )
 }

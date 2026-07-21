@@ -290,7 +290,7 @@ export const useStore = create<StoreState>((set, get) => ({
             const resolved = resolveClip(c, c.start + time)
             const snapshot: KeyframeValues = {
               x: resolved.x ?? 0, y: resolved.y ?? 0, scale: resolved.scale ?? 1, rotate: resolved.rotate ?? 0,
-              rotateX: resolved.rotateX ?? 0, rotateY: resolved.rotateY ?? 0, opacity: resolved.opacity ?? 100,
+              rotateX: resolved.rotateX ?? 0, rotateY: resolved.rotateY ?? 0, z: resolved.z ?? 0, opacity: resolved.opacity ?? 100,
               cropX: resolved.cropX ?? 0, cropY: resolved.cropY ?? 0, cropW: resolved.cropW ?? 100, cropH: resolved.cropH ?? 100,
             }
             const values = { ...snapshot, ...patch }
