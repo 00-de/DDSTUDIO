@@ -38,6 +38,8 @@ function Props() {
   const setCurrentTime = useStore((s) => s.setCurrentTime)
   const currentTime = useStore((s) => s.currentTime)
   const setName = useStore((s) => s.setName)
+  const [animDur, setAnimDur] = useState(0.8)
+  const [tplGroup, setTplGroup] = useState(TPL_GROUPS[0])
   const setResolution = useStore((s) => s.setResolution)
   const setFps = useStore((s) => s.setFps)
 
@@ -76,8 +78,6 @@ function Props() {
   const aset = (p: Partial<Clip>) => setAnimatedValue(clip.id, p as never, currentTime - clip.start)
   const hasKf = (clip.keyframes?.length ?? 0) > 0
   const kfActive = currentTime >= clip.start && currentTime < clip.start + clip.duration
-  const [animDur, setAnimDur] = useState(0.8)
-  const [tplGroup, setTplGroup] = useState(TPL_GROUPS[0])
   const isText = clip.kind === 'lyrics' || clip.kind === 'subtitle'
   const isVideo = clip.kind === 'video'
   const isImage = clip.kind === 'image'
