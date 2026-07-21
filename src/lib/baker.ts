@@ -201,20 +201,52 @@ export class Compositor {
     const { w, h } = this
     const text = c.text || c.label
     if (!text) return
+    const ts = c.tstyle
     const fs = (c.fontSize ?? 48) * (this.h / 1080) * 1.4
     ctx.save()
     ctx.globalAlpha = clamp(clipOpacity(c, t), 0, 1)
     ctx.translate(w / 2 + (c.x ?? 0) / 100 * w, h / 2 + (c.y ?? 0) / 100 * h)
     ctx.scale(c.scale ?? 1, c.scale ?? 1)
-    ctx.font = `900 ${fs}px "Yu Gothic UI", "Meiryo", system-ui, sans-serif`
+    const weight = ts?.weight ?? 900
+    const italic = ts?.italic ? 'italic ' : ''
+    ctx.font = `${italic}${weight} ${fs}px "Yu Gothic UI", "Meiryo", system-ui, sans-serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.lineJoin = 'round'
-    ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = fs * 0.2; ctx.shadowOffsetY = fs * 0.05
-    ctx.lineWidth = fs * 0.12; ctx.strokeStyle = 'rgba(0,0,0,0.6)'
-    ctx.strokeText(text, 0, 0)
-    ctx.shadowColor = 'transparent'
-    ctx.fillStyle = c.fontColor ?? '#fff'
+
+    // 背景帯
+    if (ts?.bg && ts.bg !== 'transparent') {
+      const m = ctx.measureText(text)
+      const bw = m.width + fs * 1.0, bh = fs * 1.5
+      ctx.fillStyle = ts.bg
+      const r = Math.min((ts.bgRadius ?? 6) * (this.h / 1080), bh / 2)
+      ctx.beginPath()
+      ctx.roundRect(-bw / 2, -bh / 2, bw, bh, r)
+      ctx.fill()
+    }
+
+    // 影 / 発光
+    if (ts?.glow) { ctx.shadowColor = ts.glowC ?? '#fff'; ctx.shadowBlur = ts.glow * (this.h / 540) }
+    else if (ts?.shadow) { ctx.shadowColor = ts.shadowC ?? '#000'; ctx.shadowBlur = ts.shadow * (this.h / 1080); ctx.shadowOffsetY = Math.max(2, ts.shadow / 3) }
+    else { ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = fs * 0.2; ctx.shadowOffsetY = fs * 0.05 }
+
+    // 縁取り
+    const sw = ts ? (ts.strokeW ?? 0) : fs * 0.12
+    if (sw > 0) {
+      ctx.lineWidth = ts ? sw * (this.h / 540) : sw
+      ctx.strokeStyle = ts?.strokeC ?? 'rgba(0,0,0,0.6)'
+      ctx.strokeText(text, 0, 0)
+    }
+    ctx.shadowColor = 'transparent'; ctx.shadowOffsetY = 0
+
+    // 塗り（グラデ対応）
+    if (ts?.fill2) {
+      const g = ctx.createLinearGradient(0, -fs / 2, 0, fs / 2)
+      g.addColorStop(0, ts.fill ?? '#fff'); g.addColorStop(1, ts.fill2)
+      ctx.fillStyle = g
+    } else {
+      ctx.fillStyle = ts?.fill ?? c.fontColor ?? '#fff'
+    }
     ctx.fillText(text, 0, 0)
     ctx.restore()
   }

@@ -84,6 +84,22 @@ export interface Clip {
     tint?: string        // 色被せ
     tintAmount?: number  // 色被せ量 0〜100
   }
+  // テキスト装飾（テロップ用）
+  tstyle?: {
+    weight?: number       // 太さ 400/700/900
+    italic?: boolean
+    fill?: string         // 文字色
+    fill2?: string        // グラデ2色目（あればグラデ）
+    strokeW?: number      // 縁取り太さ px
+    strokeC?: string      // 縁取り色
+    shadow?: number       // 影の強さ 0〜40
+    shadowC?: string
+    glow?: number         // 発光 0〜40
+    glowC?: string
+    bg?: string           // 背景帯の色（transparentで無し）
+    bgRadius?: number
+    spacing?: number      // 字間 px
+  }
   // コラージュ/PiP のセル（枠）。指定時はこのセル内に cover 表示される（frame比 0〜1）
   cellW?: number
   cellH?: number

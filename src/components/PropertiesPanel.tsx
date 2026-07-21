@@ -4,6 +4,10 @@ import { EFFECTS, BACKGROUNDS, TRANSITIONS, CAMERA_MOVES } from '@/lib/catalog'
 import type { Clip } from '@/types'
 import { presetsByGroup, hasFx, type FxPreset } from '@/lib/filters'
 import { ANIM_PRESETS, applyAnimPreset } from '@/lib/animPresets'
+import { allTemplates, tstyleCss } from '@/lib/textTemplates'
+
+const TEMPLATES = allTemplates()
+const TPL_GROUPS = Array.from(new Set(TEMPLATES.map((t) => t.group)))
 
 export default function PropertiesPanel() {
   const [tab, setTab] = useState<'props' | 'effects' | 'stage'>('props')
@@ -73,6 +77,7 @@ function Props() {
   const hasKf = (clip.keyframes?.length ?? 0) > 0
   const kfActive = currentTime >= clip.start && currentTime < clip.start + clip.duration
   const [animDur, setAnimDur] = useState(0.8)
+  const [tplGroup, setTplGroup] = useState(TPL_GROUPS[0])
   const isText = clip.kind === 'lyrics' || clip.kind === 'subtitle'
   const isVideo = clip.kind === 'video'
   const isImage = clip.kind === 'image'
@@ -251,6 +256,28 @@ function Props() {
               className="text-[10px] px-2 py-1 rounded border border-stage-700 hover:border-dream-violet flex-1">右に寄る</button>
           </div>
           <div className="text-[10px] text-stage-600">キーフレームと併用：全体表示で◆追加→先で「中央に寄る」して◆追加、で寄っていくアニメになります。</div>
+        </div>
+      )}
+
+      {isText && (
+        <div className="space-y-2 rounded-lg border border-stage-800 p-2 bg-stage-850">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-dream-violet font-semibold tracking-wider">テキストテンプレート（{TEMPLATES.length}種）</span>
+            {clip.tstyle && <button onClick={() => patch({ tstyle: undefined })} className="text-[10px] text-stage-600 hover:text-red-500">解除</button>}
+          </div>
+          <select className="dds-select w-full text-[11px]" value={tplGroup} onChange={(e) => setTplGroup(e.target.value)}>
+            {TPL_GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+          <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-0.5">
+            {TEMPLATES.filter((tp) => tp.group === tplGroup).map((tp) => (
+              <button key={tp.id} onClick={() => patch({ tstyle: { ...tp.tstyle } })}
+                className="rounded border border-stage-700 hover:border-dream-violet bg-stage-950 px-1 py-2 overflow-hidden"
+                title={tp.name}>
+                <span className="text-[13px] whitespace-nowrap" style={tstyleCss(tp.tstyle)}>あア A</span>
+                <div className="text-[8px] text-stage-600 truncate mt-0.5">{tp.name}</div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

@@ -5,6 +5,7 @@ import EffectsCanvas from '@/components/EffectsCanvas'
 import TransitionOverlay, { cameraStyle } from '@/components/TransitionOverlay'
 import { resolveClip } from '@/lib/keyframes'
 import { cssFilter, glowShadow } from '@/lib/filters'
+import { tstyleCss } from '@/lib/textTemplates'
 
 // 背景ラベル → CSS
 export function bgStyle(label?: string): React.CSSProperties {
@@ -249,14 +250,20 @@ function TelopText({ clip }: { clip: Clip }) {
 
   useEffect(() => { if (editing) ref.current?.focus() }, [editing])
 
-  const style: React.CSSProperties = {
-    fontSize: `${(clip.fontSize ?? 48) * 0.6}px`,
-    color: clip.fontColor ?? '#fff',
-    fontWeight: 900,
-    textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 2px #000',
-    WebkitTextStroke: '1px rgba(0,0,0,0.5)',
-    lineHeight: 1.2,
-  }
+  const style: React.CSSProperties = clip.tstyle
+    ? {
+        fontSize: `${(clip.fontSize ?? 48) * 0.6}px`,
+        lineHeight: 1.2,
+        ...tstyleCss(clip.tstyle),
+      }
+    : {
+        fontSize: `${(clip.fontSize ?? 48) * 0.6}px`,
+        color: clip.fontColor ?? '#fff',
+        fontWeight: 900,
+        textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 2px #000',
+        WebkitTextStroke: '1px rgba(0,0,0,0.5)',
+        lineHeight: 1.2,
+      }
 
   if (editing) {
     return (
