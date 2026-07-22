@@ -97,7 +97,7 @@ interface StoreState {
   moveTrackTo: (id: string, toIndex: number) => void
   addClipFromAssetAt: (assetId: string, trackId: string, start: number) => void
   createCollage: (cells: { assetId: string; x: number; y: number; scale: number; layer: number; borderWidth?: number; borderColor?: string; borderRadius?: number; frameShadow?: boolean }[], start: number, duration: number) => void
-  addTelop: (text?: string) => void
+  addTelop: (text?: string, tstyle?: Clip['tstyle']) => void
   addTelopLines: (text: string, perLine?: number) => void
 
   setCurrentTime: (t: number) => void
@@ -491,7 +491,7 @@ export const useStore = create<StoreState>((set, get) => ({
       })
     ),
 
-  addTelop: (text = 'テロップ') =>
+  addTelop: (text = 'テロップ', tstyle?: Clip['tstyle']) =>
     set((s) =>
       withHistory(s, (p) => {
         const track = p.tracks.find((t) => t.type === 'subtitle') || p.tracks[0]
@@ -510,6 +510,7 @@ export const useStore = create<StoreState>((set, get) => ({
           x: 0,
           y: 0,
           scale: 1,
+          tstyle: tstyle ? { ...tstyle } : undefined,
         }
         track.clips.push(clip)
         return fit(p)

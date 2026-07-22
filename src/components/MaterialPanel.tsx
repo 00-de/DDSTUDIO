@@ -4,6 +4,11 @@ import { importMedia } from '@/lib/actions'
 import { MEMBERS } from '@/lib/catalog'
 import { kindFromExt, getMediaDuration } from '@/lib/media'
 import { getThumb } from '@/lib/thumbs'
+import { allTemplates, tstyleCss } from '@/lib/textTemplates'
+import { FX_PRESETS } from '@/lib/filters'
+import { EFFECTS, TRANSITIONS, BACKGROUNDS, CAMERA_MOVES } from '@/lib/catalog'
+
+const TEMPLATES = allTemplates()
 import type { MediaAsset, MediaKind } from '@/types'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
@@ -32,7 +37,11 @@ function AssetThumb({ asset }: { asset: MediaAsset }) {
 const KIND_ICON: Record<MediaKind, string> = { video: '🎞', image: '🖼', audio: '🎵' }
 
 export default function MaterialPanel() {
-  const [tab, setTab] = useState<'assets' | 'members'>('assets')
+  const [tab, setTab] = useState<'assets' | 'members' | 'text' | 'fx' | 'trans' | 'filter' | 'bg' | 'cam'>('assets')
+  const [q, setQ] = useState('')
+  const addTelop = useStore((st) => st.addTelop)
+  const selectedClipId = useStore((st) => st.selectedClipId)
+  const updateClip = useStore((st) => st.updateClip)
   const assets = useStore((s) => s.project.assets)
   const addAssets = useStore((s) => s.addAssets)
   const addClipFromAsset = useStore((s) => s.addClipFromAsset)
@@ -69,7 +78,13 @@ export default function MaterialPanel() {
     >
       {/* タブ */}
       <div className="flex border-b border-stage-800">
-        <TabBtn active={tab === 'assets'} onClick={() => setTab('assets')}>素材</TabBtn>
+        <TabBtn active={tab === 'assets'} onClick={() => setTab('assets')}>メディア</TabBtn>
+        <TabBtn active={tab === 'text'} onClick={() => setTab('text')}>テキスト</TabBtn>
+        <TabBtn active={tab === 'fx'} onClick={() => setTab('fx')}>エフェクト</TabBtn>
+        <TabBtn active={tab === 'trans'} onClick={() => setTab('trans')}>切替</TabBtn>
+        <TabBtn active={tab === 'filter'} onClick={() => setTab('filter')}>フィルター</TabBtn>
+        <TabBtn active={tab === 'bg'} onClick={() => setTab('bg')}>背景</TabBtn>
+        <TabBtn active={tab === 'cam'} onClick={() => setTab('cam')}>カメラ</TabBtn>
         <TabBtn active={tab === 'members'} onClick={() => setTab('members')}>メンバー</TabBtn>
       </div>
 
@@ -151,6 +166,59 @@ export default function MaterialPanel() {
               <div className="ml-auto w-3 h-3 rounded-full shrink-0" style={{ background: m.color }} />
             </button>
           ))}
+        </div>
+      )}
+
+      {(tab === 'text' || tab === 'fx' || tab === 'trans' || tab === 'filter' || tab === 'bg' || tab === 'cam') && (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="p-2">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="検索…"
+              className="dds-input w-full text-[12px]" />
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 space-y-1.5">
+            {tab === 'text' && TEMPLATES.filter((t) => !q || t.name.includes(q)).map((t) => (
+              <button key={t.id} onClick={() => addTelop('テロップ', t.tstyle)}
+                className="w-full rounded-md border border-stage-800 bg-stage-950 hover:border-dream-violet px-2 py-2 text-left overflow-hidden"
+                title={t.name + '（クリックで再生位置に追加）'}>
+                <span className="text-[15px] whitespace-nowrap" style={tstyleCss(t.tstyle)}>あア Aa</span>
+                <div className="text-[9px] text-stage-600 truncate">{t.name}</div>
+              </button>
+            ))}
+            {tab === 'fx' && EFFECTS.filter((e) => !q || e.name.includes(q)).map((e) => (
+              <button key={e.id} onClick={() => addSpecialClip({ kind: 'effect', label: e.name, effectId: e.id, color: e.color, duration: 3 })}
+                className="w-full flex items-center gap-2 rounded-md border border-stage-800 bg-stage-850 hover:border-dream-violet px-2 py-2">
+                <span className="text-lg">{e.icon}</span><span className="text-xs">{e.name}</span>
+              </button>
+            ))}
+            {tab === 'trans' && TRANSITIONS.filter((t) => !q || t.includes(q)).map((t) => (
+              <button key={t} onClick={() => addSpecialClip({ kind: 'effect', label: t, transition: t, direction: 'both', transColor: '#000000', duration: 1, color: '#94A3B8' })}
+                className="w-full rounded-md border border-stage-800 bg-stage-850 hover:border-dream-violet px-2 py-2 text-left text-xs">
+                {t}
+              </button>
+            ))}
+            {tab === 'bg' && BACKGROUNDS.filter((b) => !q || b.includes(q)).map((b) => (
+              <button key={b} onClick={() => addSpecialClip({ kind: 'background', label: b, duration: 8, color: '#0EA5E9' })}
+                className="w-full rounded-md border border-stage-800 bg-stage-850 hover:border-dream-violet px-2 py-2 text-left text-xs">
+                {b}
+              </button>
+            ))}
+            {tab === 'cam' && CAMERA_MOVES.filter((c) => !q || c.includes(q)).map((c) => (
+              <button key={c} onClick={() => addSpecialClip({ kind: 'camera', label: c, camera: c, duration: 4, color: '#F97316' })}
+                className="w-full rounded-md border border-stage-800 bg-stage-850 hover:border-dream-violet px-2 py-2 text-left text-xs">
+                {c}
+              </button>
+            ))}
+            {tab === 'filter' && FX_PRESETS.filter((p) => !q || p.name.includes(q)).map((p) => (
+              <button key={p.id}
+                onClick={() => { if (!selectedClipId) { alert('先に動画・画像クリップを選んでください。'); return } updateClip(selectedClipId, { fx: { ...p.fx } }) }}
+                className="w-full rounded-md border border-stage-800 bg-stage-850 hover:border-dream-violet px-2 py-2 text-left text-xs flex justify-between">
+                <span>{p.name}</span><span className="text-[9px] text-stage-600">{p.group}</span>
+              </button>
+            ))}
+          </div>
+          <div className="text-[9px] text-stage-600 px-2 pb-2">
+            {tab === 'filter' ? 'クリップを選んでからクリックで適用' : 'クリックで再生位置に追加'}
+          </div>
         </div>
       )}
     </div>
