@@ -76,19 +76,28 @@ export default function MaterialPanel() {
       onDragLeave={() => setDragOver(false)}
       onDrop={onDrop}
     >
-      {/* タブ */}
-      <div className="flex border-b border-stage-800">
-        <TabBtn active={tab === 'assets'} onClick={() => setTab('assets')}>メディア</TabBtn>
-        <TabBtn active={tab === 'text'} onClick={() => setTab('text')}>テキスト</TabBtn>
-        <TabBtn active={tab === 'fx'} onClick={() => setTab('fx')}>エフェクト</TabBtn>
-        <TabBtn active={tab === 'trans'} onClick={() => setTab('trans')}>切替</TabBtn>
-        <TabBtn active={tab === 'filter'} onClick={() => setTab('filter')}>フィルター</TabBtn>
-        <TabBtn active={tab === 'bg'} onClick={() => setTab('bg')}>背景</TabBtn>
-        <TabBtn active={tab === 'cam'} onClick={() => setTab('cam')}>カメラ</TabBtn>
-        <TabBtn active={tab === 'members'} onClick={() => setTab('members')}>メンバー</TabBtn>
+      {/* タブ（アイコン+ラベルの2段グリッド） */}
+      <div className="grid grid-cols-4 gap-1 p-1.5 border-b border-stage-800">
+        {([
+          ['assets', '🎬', 'メディア'],
+          ['text', '🅣', 'テキスト'],
+          ['fx', '✨', 'エフェクト'],
+          ['trans', '⇄', '切替'],
+          ['filter', '🎨', 'フィルタ'],
+          ['bg', '🌌', '背景'],
+          ['cam', '📷', 'カメラ'],
+          ['members', '👥', 'メンバー'],
+        ] as const).map(([id, icon, label]) => (
+          <button key={id} onClick={() => setTab(id)}
+            className={'flex flex-col items-center gap-0.5 rounded-md py-1.5 transition-colors ' +
+              (tab === id ? 'dream-gradient text-white' : 'text-stage-600 hover:bg-stage-850 hover:text-dream-violet')}>
+            <span className="text-[13px] leading-none">{icon}</span>
+            <span className="text-[9px] leading-none whitespace-nowrap">{label}</span>
+          </button>
+        ))}
       </div>
 
-      {tab === 'assets' ? (
+      {tab === 'assets' && (
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="p-2">
             <button
@@ -134,7 +143,9 @@ export default function MaterialPanel() {
             )}
           </div>
         </div>
-      ) : (
+      ) }
+
+      {tab === 'members' && (
         <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
           <div className="text-[11px] text-stage-600 px-1 mb-1">クリックでメンバー表示を配置</div>
           {MEMBERS.map((m) => (
