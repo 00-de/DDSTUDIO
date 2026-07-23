@@ -5,10 +5,12 @@ import { MEMBERS } from '@/lib/catalog'
 import { kindFromExt, getMediaDuration } from '@/lib/media'
 import { getThumb } from '@/lib/thumbs'
 import { allTemplates, tstyleCss } from '@/lib/textTemplates'
+import { ANIM_PRESETS, applyAnimPreset } from '@/lib/animPresets'
 import { FX_PRESETS, cssFilter } from '@/lib/filters'
 import { EFFECTS, TRANSITIONS, BACKGROUNDS, CAMERA_MOVES } from '@/lib/catalog'
 
 const TEMPLATES = allTemplates()
+const TPL_GROUPS = Array.from(new Set(TEMPLATES.map((t) => t.group)))
 import type { MediaAsset, MediaKind } from '@/types'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
@@ -39,6 +41,30 @@ const KIND_ICON: Record<MediaKind, string> = { video: '🎞', image: '🖼', aud
 export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: number) => void }) {
   const [tab, setTab] = useState<'assets' | 'members' | 'text' | 'fx' | 'trans' | 'filter' | 'bg' | 'cam'>('assets')
   const [q, setQ] = useState('')
+  const [tGroup, setTGroup] = useState('')
+  const [picked, setPicked] = useState<string | null>(null)   // クリック演出中のタイル
+  const [entrance, setEntrance] = useState('')                // 追加時の登場アニメ
+
+  // テロップを追加し、選んだ登場アニメを適用
+  const addTelopAnimated = (tstyle: ReturnType<typeof allTemplates>[number]['tstyle'], presetId: string) => {
+    addTelop('テロップ', tstyle)
+    if (!presetId) return
+    const st = useStore.getState()
+    let target: { id: string; clip: import('@/types').Clip } | null = null
+    for (const tr of st.project.tracks) {
+      for (const c of tr.clips) {
+        if (c.kind !== 'lyrics' && c.kind !== 'subtitle') continue
+        if (!target || c.start > target.clip.start) target = { id: c.id, clip: c }
+      }
+    }
+    if (target) st.updateClip(target.id, { keyframes: applyAnimPreset(target.clip, presetId, 0.8) })
+  }
+
+  // タイルを押したときの共通演出（ポップ）
+  const pop = (id: string) => {
+    setPicked(id)
+    window.setTimeout(() => setPicked((cur) => (cur === id ? null : cur)), 450)
+  }
   const addTelop = useStore((st) => st.addTelop)
   const selectedClipId = useStore((st) => st.selectedClipId)
   const updateClip = useStore((st) => st.updateClip)
@@ -194,66 +220,79 @@ export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: numbe
           <div className="p-2 flex items-center gap-2">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="検索…"
               className="dds-input flex-1 text-[12px]" />
-            <span className="text-[10px] text-stage-600 whitespace-nowrap">
-              {tab === 'text' ? `${TEMPLATES.length}種` : ''}
-            </span>
+            {tab === 'text' && (
+              <select className="dds-select text-[11px] py-1 w-28" title="追加時の登場アニメ" value={entrance} onChange={(e) => setEntrance(e.target.value)}>
+                <option value="">アニメなし</option>
+                {ANIM_PRESETS.filter((p) => p.group === '登場').map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            )}
+            {tab === 'text' && (
+              <select className="dds-select text-[11px] py-1 w-28" value={tGroup} onChange={(e) => setTGroup(e.target.value)}>
+                <option value="">すべて({TEMPLATES.length})</option>
+                {TPL_GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
+            )}
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 grid grid-cols-3 gap-2 content-start">
-            {tab === 'text' && TEMPLATES.filter((t) => !q || t.name.includes(q)).map((t) => (
-              <button key={t.id} onClick={() => addTelop('テロップ', t.tstyle)}
-                className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col"
+            {tab === 'text' && TEMPLATES.filter((t) => (!q || t.name.includes(q)) && (!tGroup || t.group === tGroup)).map((t) => (
+              <button key={t.id} onClick={() => { pop(t.id); addTelopAnimated(t.tstyle, entrance) }}
+                className={'group rounded-lg border-2 bg-white overflow-hidden flex flex-col transition-transform duration-200 ' +
+                  (picked === t.id ? 'border-dream-violet scale-105 ring-4 ring-dream-violet/40 z-10' : 'border-stage-700 hover:border-dream-violet hover:scale-[1.03]')}
                 title={t.name + '（クリックで再生位置に追加）'}>
-                <div className="aspect-square w-full flex items-center justify-center px-1 overflow-hidden"
+                <div className="w-full h-[112px] shrink-0 flex items-center justify-center px-1 overflow-hidden"
                   style={{ background: 'linear-gradient(135deg,#241f3d,#3b2f63 55%,#4a2f5e)' }}>
-                  <span className="text-[20px] leading-none whitespace-nowrap" style={tstyleCss(t.tstyle)}>あア</span>
+                  <span className={'text-[30px] leading-none whitespace-nowrap transition-transform duration-300 ' +
+                    (picked === t.id ? 'dds-pop' : 'group-hover:scale-110')}
+                    style={tstyleCss(t.tstyle)}>あア</span>
                 </div>
-                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{t.name}</div>
+                <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{t.name}</div>
               </button>
             ))}
             {tab === 'fx' && EFFECTS.filter((e) => !q || e.name.includes(q)).map((e) => (
-              <button key={e.id} onClick={() => addSpecialClip({ kind: 'effect', label: e.name, effectId: e.id, color: e.color, duration: 3 })}
-                className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="aspect-square w-full flex items-center justify-center overflow-hidden"
+              <button key={e.id} onClick={() => { pop(e.id); addSpecialClip({ kind: 'effect', label: e.name, effectId: e.id, color: e.color, duration: 3 }) }}
+                className={'group rounded-lg border-2 bg-white overflow-hidden flex flex-col transition-transform duration-200 ' +
+                  (picked === e.id ? 'border-dream-violet scale-105 ring-4 ring-dream-violet/40 z-10' : 'border-stage-700 hover:border-dream-violet hover:scale-[1.03]')}>
+                <div className="w-full h-[112px] shrink-0 flex items-center justify-center overflow-hidden"
                   style={{ background: `linear-gradient(135deg, ${e.color}, ${e.color}88)` }}>
-                  <span className="text-[30px] leading-none drop-shadow">{e.icon}</span>
+                  <span className="text-[40px] leading-none drop-shadow">{e.icon}</span>
                 </div>
-                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{e.name}</div>
+                <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{e.name}</div>
               </button>
             ))}
             {tab === 'trans' && TRANSITIONS.filter((t) => !q || t.includes(q)).map((t) => (
               <button key={t} onClick={() => addSpecialClip({ kind: 'effect', label: t, transition: t, direction: 'both', transColor: '#000000', duration: 1, color: '#94A3B8' })}
                 className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="aspect-square w-full flex items-center justify-center overflow-hidden"
+                <div className="w-full h-[112px] shrink-0 flex items-center justify-center overflow-hidden"
                   style={{ background: 'linear-gradient(90deg,#1e293b 0 50%,#94a3b8 50% 100%)' }}>
-                  <span className="text-[22px] leading-none text-white/90">⇄</span>
+                  <span className="text-[34px] leading-none text-white/90">⇄</span>
                 </div>
-                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{t}</div>
+                <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{t}</div>
               </button>
             ))}
             {tab === 'bg' && BACKGROUNDS.filter((b) => !q || b.includes(q)).map((b) => (
               <button key={b} onClick={() => addSpecialClip({ kind: 'background', label: b, duration: 8, color: '#0EA5E9' })}
                 className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="aspect-square w-full" style={bgSwatch(b)} />
-                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{b}</div>
+                <div className="w-full h-[112px] shrink-0" style={bgSwatch(b)} />
+                <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{b}</div>
               </button>
             ))}
             {tab === 'cam' && CAMERA_MOVES.filter((c) => !q || c.includes(q)).map((c) => (
               <button key={c} onClick={() => addSpecialClip({ kind: 'camera', label: c, camera: c, duration: 4, color: '#F97316' })}
                 className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="aspect-square w-full flex items-center justify-center"
+                <div className="w-full h-[112px] shrink-0 flex items-center justify-center"
                   style={{ background: 'linear-gradient(135deg,#f97316,#fbbf24)' }}>
-                  <span className="text-[26px] leading-none">🎥</span>
+                  <span className="text-[38px] leading-none">🎥</span>
                 </div>
-                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{c}</div>
+                <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{c}</div>
               </button>
             ))}
             {tab === 'filter' && FX_PRESETS.filter((p) => !q || p.name.includes(q)).map((p) => (
               <button key={p.id}
                 onClick={() => { if (!selectedClipId) { alert('先に動画・画像クリップを選んでください。'); return } updateClip(selectedClipId, { fx: { ...p.fx } }) }}
                 className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="aspect-square w-full flex items-center justify-center text-[13px] font-bold text-white"
+                <div className="w-full h-[112px] shrink-0 flex items-center justify-center text-[26px] font-black text-white"
                   style={{ background: 'linear-gradient(135deg,#22d3ee,#a855f7 55%,#ec4899)', filter: cssFilter(p.fx) || undefined }}>Aa</div>
-                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{p.name}</div>
+                <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{p.name}</div>
               </button>
             ))}
           </div>
