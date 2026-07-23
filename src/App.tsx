@@ -86,6 +86,24 @@ function Editor() {
   }
   const onSplitUp = () => { splitDrag.current = false }
 
+  // 左右パネルの幅
+  const [leftW, setLeftW] = useState(256)
+  const [rightW, setRightW] = useState(288)
+  const sideDrag = useRef<{ side: 'left' | 'right'; startX: number; startW: number } | null>(null)
+
+  const startSide = (e: React.PointerEvent, side: 'left' | 'right') => {
+    sideDrag.current = { side, startX: e.clientX, startW: side === 'left' ? leftW : rightW }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const onSideMove = (e: React.PointerEvent) => {
+    const d = sideDrag.current
+    if (!d) return
+    const dx = e.clientX - d.startX
+    if (d.side === 'left') setLeftW(Math.min(760, Math.max(180, d.startW + dx)))
+    else setRightW(Math.min(760, Math.max(200, d.startW - dx)))
+  }
+  const onSideUp = () => { sideDrag.current = null }
+
   // 再生ループ
   useEffect(() => {
     if (!playing) {
@@ -163,17 +181,39 @@ function Editor() {
       <div ref={containerRef} className="flex-1 min-h-0 flex flex-col"
         onPointerMove={onSplitMove} onPointerUp={onSplitUp}>
         {/* 上段：素材 / プレビュー＋トランスポート / プロパティ / マスター */}
-        <div className="flex-1 min-h-0 flex">
-          <div className="shrink-0 border-r border-stage-800 bg-stage-900 flex flex-col">
-            <MaterialPanel />
+        <div className="flex-1 min-h-0 flex" onPointerMove={onSideMove} onPointerUp={onSideUp}>
+          <div className="shrink-0 border-r border-stage-800 bg-stage-900 flex flex-col overflow-hidden" style={{ width: leftW }}>
+            <MaterialPanel onAutoWidth={(w) => setLeftW((cur) => (cur < w ? w : cur))} />
           </div>
+
+          {/* 左の分割バー */}
+          <div
+            onPointerDown={(e) => startSide(e, 'left')}
+            onDoubleClick={() => setLeftW(256)}
+            className="w-1.5 shrink-0 cursor-col-resize bg-stage-800 hover:bg-dream-violet/60 transition-colors flex items-center justify-center group"
+            title="ドラッグで素材パネルの幅を調整（ダブルクリックで初期値）"
+          >
+            <div className="h-10 w-0.5 rounded-full bg-stage-600 group-hover:bg-white" />
+          </div>
+
           <div className="flex-1 min-w-0 flex flex-col">
             <div className="flex-1 min-h-0 bg-stage-950 flex items-center justify-center p-4">
               <Preview />
             </div>
             <PreviewTransport />
           </div>
-          <div className="w-72 shrink-0 border-l border-stage-800 bg-stage-900 flex flex-col">
+
+          {/* 右の分割バー */}
+          <div
+            onPointerDown={(e) => startSide(e, 'right')}
+            onDoubleClick={() => setRightW(288)}
+            className="w-1.5 shrink-0 cursor-col-resize bg-stage-800 hover:bg-dream-violet/60 transition-colors flex items-center justify-center group"
+            title="ドラッグでプロパティパネルの幅を調整（ダブルクリックで初期値）"
+          >
+            <div className="h-10 w-0.5 rounded-full bg-stage-600 group-hover:bg-white" />
+          </div>
+
+          <div className="shrink-0 border-l border-stage-800 bg-stage-900 flex flex-col overflow-hidden" style={{ width: rightW }}>
             <PropertiesPanel />
           </div>
           <MasterMeter />

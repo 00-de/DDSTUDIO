@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/store/useStore'
 import { importMedia } from '@/lib/actions'
 import { MEMBERS } from '@/lib/catalog'
@@ -36,7 +36,7 @@ function AssetThumb({ asset }: { asset: MediaAsset }) {
 
 const KIND_ICON: Record<MediaKind, string> = { video: '🎞', image: '🖼', audio: '🎵' }
 
-export default function MaterialPanel() {
+export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: number) => void }) {
   const [tab, setTab] = useState<'assets' | 'members' | 'text' | 'fx' | 'trans' | 'filter' | 'bg' | 'cam'>('assets')
   const [q, setQ] = useState('')
   const addTelop = useStore((st) => st.addTelop)
@@ -48,6 +48,14 @@ export default function MaterialPanel() {
   const addSpecialClip = useStore((s) => s.addSpecialClip)
   const [dragOver, setDragOver] = useState(false)
   const wide = ['text','fx','trans','filter','bg','cam'].includes(tab)
+  // タブを切り替えた瞬間だけ自動で広げる（手動リサイズを尊重）
+  const prevTab = useRef(tab)
+  useEffect(() => {
+    if (prevTab.current !== tab) {
+      prevTab.current = tab
+      if (wide) onAutoWidth?.(470)
+    }
+  }, [tab, wide, onAutoWidth])
 
   // OS からのファイルドロップ
   const onDrop = async (e: React.DragEvent) => {
@@ -69,7 +77,7 @@ export default function MaterialPanel() {
 
   return (
     <div
-      className={'flex flex-col h-full transition-[width] duration-150 ' + (wide ? 'w-[470px] ' : 'w-64 ') + (dragOver ? 'ring-2 ring-dream-violet ring-inset' : '')}
+      className={'flex flex-col h-full w-full ' + (dragOver ? 'ring-2 ring-dream-violet ring-inset' : '')}
       onDragOver={(e) => {
         e.preventDefault()
         setDragOver(true)
