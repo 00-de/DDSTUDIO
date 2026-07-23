@@ -239,8 +239,8 @@ export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: numbe
                 className={'group rounded-lg border-2 bg-white overflow-hidden flex flex-col transition-transform duration-200 ' +
                   (picked === t.id ? 'border-dream-violet scale-105 ring-4 ring-dream-violet/40 z-10' : 'border-stage-700 hover:border-dream-violet hover:scale-[1.03]')}
                 title={t.name + '（クリックで再生位置に追加）'}>
-                <div className="w-full h-[112px] shrink-0 flex items-center justify-center px-1 overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg,#241f3d,#3b2f63 55%,#4a2f5e)' }}>
+                <div className="w-full shrink-0 flex items-center justify-center px-1 overflow-hidden"
+                  style={{ height: 118, background: 'linear-gradient(135deg,#241f3d,#3b2f63 55%,#4a2f5e)' }}>
                   <span className={'text-[30px] leading-none whitespace-nowrap transition-transform duration-300 ' +
                     (picked === t.id ? 'dds-pop' : 'group-hover:scale-110')}
                     style={tstyleCss(t.tstyle)}>あア</span>
@@ -252,8 +252,8 @@ export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: numbe
               <button key={e.id} onClick={() => { pop(e.id); addSpecialClip({ kind: 'effect', label: e.name, effectId: e.id, color: e.color, duration: 3 }) }}
                 className={'group rounded-lg border-2 bg-white overflow-hidden flex flex-col transition-transform duration-200 ' +
                   (picked === e.id ? 'border-dream-violet scale-105 ring-4 ring-dream-violet/40 z-10' : 'border-stage-700 hover:border-dream-violet hover:scale-[1.03]')}>
-                <div className="w-full h-[112px] shrink-0 flex items-center justify-center overflow-hidden"
-                  style={{ background: `linear-gradient(135deg, ${e.color}, ${e.color}88)` }}>
+                <div className="w-full shrink-0 flex items-center justify-center overflow-hidden"
+                  style={{ height: 118, background: `linear-gradient(135deg, ${e.color}, ${e.color}88)` }}>
                   <span className="text-[40px] leading-none drop-shadow">{e.icon}</span>
                 </div>
                 <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{e.name}</div>
@@ -262,8 +262,8 @@ export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: numbe
             {tab === 'trans' && TRANSITIONS.filter((t) => !q || t.includes(q)).map((t) => (
               <button key={t} onClick={() => addSpecialClip({ kind: 'effect', label: t, transition: t, direction: 'both', transColor: '#000000', duration: 1, color: '#94A3B8' })}
                 className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="w-full h-[112px] shrink-0 flex items-center justify-center overflow-hidden"
-                  style={{ background: 'linear-gradient(90deg,#1e293b 0 50%,#94a3b8 50% 100%)' }}>
+                <div className="w-full shrink-0 flex items-center justify-center overflow-hidden"
+                  style={{ height: 118, background: 'linear-gradient(90deg,#1e293b 0 50%,#94a3b8 50% 100%)' }}>
                   <span className="text-[34px] leading-none text-white/90">⇄</span>
                 </div>
                 <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{t}</div>
@@ -272,15 +272,15 @@ export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: numbe
             {tab === 'bg' && BACKGROUNDS.filter((b) => !q || b.includes(q)).map((b) => (
               <button key={b} onClick={() => addSpecialClip({ kind: 'background', label: b, duration: 8, color: '#0EA5E9' })}
                 className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="w-full h-[112px] shrink-0" style={bgSwatch(b)} />
+                <div className="w-full shrink-0" style={{ ...bgSwatch(b), height: 118 }} />
                 <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{b}</div>
               </button>
             ))}
             {tab === 'cam' && CAMERA_MOVES.filter((c) => !q || c.includes(q)).map((c) => (
               <button key={c} onClick={() => addSpecialClip({ kind: 'camera', label: c, camera: c, duration: 4, color: '#F97316' })}
                 className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="w-full h-[112px] shrink-0 flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#fbbf24)' }}>
+                <div className="w-full shrink-0 flex items-center justify-center"
+                  style={{ height: 118, background: 'linear-gradient(135deg,#f97316,#fbbf24)' }}>
                   <span className="text-[38px] leading-none">🎥</span>
                 </div>
                 <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{c}</div>
@@ -290,8 +290,8 @@ export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: numbe
               <button key={p.id}
                 onClick={() => { if (!selectedClipId) { alert('先に動画・画像クリップを選んでください。'); return } updateClip(selectedClipId, { fx: { ...p.fx } }) }}
                 className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
-                <div className="w-full h-[112px] shrink-0 flex items-center justify-center text-[26px] font-black text-white"
-                  style={{ background: 'linear-gradient(135deg,#22d3ee,#a855f7 55%,#ec4899)', filter: cssFilter(p.fx) || undefined }}>Aa</div>
+                <div className="w-full shrink-0 flex items-center justify-center text-[26px] font-black text-white"
+                  style={{ height: 118, background: 'linear-gradient(135deg,#22d3ee,#a855f7 55%,#ec4899)', filter: cssFilter(p.fx) || undefined }}>Aa</div>
                 <div className="text-[10px] text-slate-700 font-medium truncate px-1.5 py-1 bg-white border-t border-stage-700 group-hover:text-dream-violet">{p.name}</div>
               </button>
             ))}
