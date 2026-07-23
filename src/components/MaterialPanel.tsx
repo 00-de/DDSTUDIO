@@ -201,46 +201,59 @@ export default function MaterialPanel({ onAutoWidth }: { onAutoWidth?: (w: numbe
           <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 grid grid-cols-3 gap-2 content-start">
             {tab === 'text' && TEMPLATES.filter((t) => !q || t.name.includes(q)).map((t) => (
               <button key={t.id} onClick={() => addTelop('テロップ', t.tstyle)}
-                className="rounded-lg border border-stage-800 bg-stage-950 hover:border-dream-violet overflow-hidden group"
+                className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col"
                 title={t.name + '（クリックで再生位置に追加）'}>
-                <div className="h-16 flex items-center justify-center px-1 bg-gradient-to-br from-stage-900 to-stage-950">
-                  <span className="text-[17px] whitespace-nowrap" style={tstyleCss(t.tstyle)}>あア</span>
+                <div className="aspect-square w-full flex items-center justify-center px-1 overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg,#241f3d,#3b2f63 55%,#4a2f5e)' }}>
+                  <span className="text-[20px] leading-none whitespace-nowrap" style={tstyleCss(t.tstyle)}>あア</span>
                 </div>
-                <div className="text-[9px] text-stage-600 truncate px-1 py-1 border-t border-stage-800 group-hover:text-dream-violet">{t.name}</div>
+                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{t.name}</div>
               </button>
             ))}
             {tab === 'fx' && EFFECTS.filter((e) => !q || e.name.includes(q)).map((e) => (
               <button key={e.id} onClick={() => addSpecialClip({ kind: 'effect', label: e.name, effectId: e.id, color: e.color, duration: 3 })}
-                className="rounded-lg border border-stage-800 bg-stage-850 hover:border-dream-violet overflow-hidden">
-                <div className="h-16 flex items-center justify-center text-2xl" style={{ background: e.color + '22' }}>{e.icon}</div>
-                <div className="text-[9px] text-stage-600 truncate px-1 py-1 border-t border-stage-800">{e.name}</div>
+                className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
+                <div className="aspect-square w-full flex items-center justify-center overflow-hidden"
+                  style={{ background: `linear-gradient(135deg, ${e.color}, ${e.color}88)` }}>
+                  <span className="text-[30px] leading-none drop-shadow">{e.icon}</span>
+                </div>
+                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{e.name}</div>
               </button>
             ))}
             {tab === 'trans' && TRANSITIONS.filter((t) => !q || t.includes(q)).map((t) => (
               <button key={t} onClick={() => addSpecialClip({ kind: 'effect', label: t, transition: t, direction: 'both', transColor: '#000000', duration: 1, color: '#94A3B8' })}
-                className="rounded-lg border border-stage-800 bg-stage-850 hover:border-dream-violet h-[70px] flex items-center justify-center text-[11px] px-1 text-center">
-                {t}
+                className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
+                <div className="aspect-square w-full flex items-center justify-center overflow-hidden"
+                  style={{ background: 'linear-gradient(90deg,#1e293b 0 50%,#94a3b8 50% 100%)' }}>
+                  <span className="text-[22px] leading-none text-white/90">⇄</span>
+                </div>
+                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{t}</div>
               </button>
             ))}
             {tab === 'bg' && BACKGROUNDS.filter((b) => !q || b.includes(q)).map((b) => (
               <button key={b} onClick={() => addSpecialClip({ kind: 'background', label: b, duration: 8, color: '#0EA5E9' })}
-                className="rounded-lg border border-stage-800 bg-stage-850 hover:border-dream-violet h-[70px] flex items-center justify-center text-[11px] px-1 text-center">
-                {b}
+                className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
+                <div className="aspect-square w-full" style={bgSwatch(b)} />
+                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{b}</div>
               </button>
             ))}
             {tab === 'cam' && CAMERA_MOVES.filter((c) => !q || c.includes(q)).map((c) => (
               <button key={c} onClick={() => addSpecialClip({ kind: 'camera', label: c, camera: c, duration: 4, color: '#F97316' })}
-                className="rounded-lg border border-stage-800 bg-stage-850 hover:border-dream-violet h-[70px] flex items-center justify-center text-[11px] px-1 text-center">
-                {c}
+                className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
+                <div className="aspect-square w-full flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg,#f97316,#fbbf24)' }}>
+                  <span className="text-[26px] leading-none">🎥</span>
+                </div>
+                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{c}</div>
               </button>
             ))}
             {tab === 'filter' && FX_PRESETS.filter((p) => !q || p.name.includes(q)).map((p) => (
               <button key={p.id}
                 onClick={() => { if (!selectedClipId) { alert('先に動画・画像クリップを選んでください。'); return } updateClip(selectedClipId, { fx: { ...p.fx } }) }}
-                className="rounded-lg border border-stage-800 bg-stage-850 hover:border-dream-violet overflow-hidden">
-                <div className="h-14 flex items-center justify-center text-[10px] text-white/90"
-                  style={{ background: 'linear-gradient(135deg,#22d3ee,#a855f7,#ec4899)', filter: cssFilter(p.fx) || undefined }}>Aa</div>
-                <div className="text-[9px] text-stage-600 truncate px-1 py-1 border-t border-stage-800">{p.name}</div>
+                className="group rounded-lg border-2 border-stage-700 hover:border-dream-violet bg-white overflow-hidden flex flex-col">
+                <div className="aspect-square w-full flex items-center justify-center text-[13px] font-bold text-white"
+                  style={{ background: 'linear-gradient(135deg,#22d3ee,#a855f7 55%,#ec4899)', filter: cssFilter(p.fx) || undefined }}>Aa</div>
+                <div className="text-[9px] text-slate-600 truncate px-1 py-1 border-t border-stage-700 group-hover:text-dream-violet">{p.name}</div>
               </button>
             ))}
           </div>
@@ -265,4 +278,20 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
       {children}
     </button>
   )
+}
+
+// 背景名 → タイル用の見た目
+function bgSwatch(label: string): React.CSSProperties {
+  switch (label) {
+    case '単色': return { background: '#0b0c11' }
+    case 'グラデーション': return { background: 'linear-gradient(135deg,#22d3ee,#a855f7,#ec4899)' }
+    case '宇宙': return { background: 'linear-gradient(180deg,#1e1b4b,#05060a)' }
+    case '海': return { background: 'linear-gradient(180deg,#0ea5e9,#082f49)' }
+    case '夜景': return { background: 'linear-gradient(180deg,#0f172a,#1e293b)' }
+    case '桜並木': return { background: 'linear-gradient(180deg,#fbcfe8,#be185d)' }
+    case 'ステージ': return { background: 'radial-gradient(circle at 50% 0%,#4c1d95,#1e1b4b 60%,#05060a)' }
+    case 'ライブLED': return { background: 'linear-gradient(135deg,#7c3aed,#0b0c11)' }
+    case 'スクリーン': return { background: 'linear-gradient(180deg,#e2e8f0,#94a3b8)' }
+    default: return { background: 'linear-gradient(135deg,#1e1b4b,#4c1d95,#831843)' }
+  }
 }
