@@ -164,7 +164,7 @@ function Editor() {
         onPointerMove={onSplitMove} onPointerUp={onSplitUp}>
         {/* 上段：素材 / プレビュー＋トランスポート / プロパティ / マスター */}
         <div className="flex-1 min-h-0 flex">
-          <div className="w-64 shrink-0 border-r border-stage-800 bg-stage-900 flex flex-col">
+          <div className="shrink-0 border-r border-stage-800 bg-stage-900 flex flex-col">
             <MaterialPanel />
           </div>
           <div className="flex-1 min-w-0 flex flex-col">
